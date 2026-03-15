@@ -2,14 +2,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 import base64
 
-# Configurazione della pagina Streamlit
+# 1. Configurazione della pagina Streamlit
 st.set_page_config(
     page_title="D&D Arena del Destino",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Rimuoviamo i margini superflui di Streamlit tramite CSS
+# 2. CSS per rendere l'interfaccia di Streamlit "invisibile" e dare spazio al gioco
 st.markdown("""
     <style>
         #root > div:nth-child(1) > div > div > div > div > section > div {
@@ -19,13 +19,15 @@ st.markdown("""
         .stApp {
             background-color: #050505;
         }
+        .block-container {
+            padding: 0 !important;
+        }
         footer {visibility: hidden;}
         header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# Inseriamo qui il tuo codice HTML completo
-# Ho aggiunto un piccolo controllo CSS iniziale per assicurarmi che il corpo sia visibile
+# 3. IL CODICE HTML COMPLETO DEL GIOCO
 game_html = """
 <!DOCTYPE html>
 <html lang="it">
@@ -45,7 +47,7 @@ game_html = """
         }
 
         body {
-            background-color: var(--bg) !important;
+            background-color: var(--bg);
             color: #eee;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -60,7 +62,8 @@ game_html = """
             position: fixed;
             inset: 0;
             background: #111; /* Fallback se l'immagine manca */
-            background-image: url('https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1920&auto=format&fit=crop'); 
+            background-image: url('Maps/intro.jpg'); 
+            background-position: center;
             background-size: cover;
             z-index: 2000;
             display: flex;
@@ -69,37 +72,568 @@ game_html = """
             justify-content: center;
             padding: 20px;
         }
+
+        #setup-screen::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(26, 26, 26, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(241, 196, 15, 0.2);
+        }
+
+        h1, h2 { color: var(--primary); margin: 0 0 15px 0; text-shadow: 2px 2px 4px #000; }
+
+        .input-group {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: gap; 10px; text-align: left;
+            flex-direction: column;
+        }
+
+        label { font-size: 14px; color: #ccc; margin-bottom: -5px; font-weight: bold; }
+
+        input, select {
+            background: #333; border: 1px solid #555; color: white;
+            padding: 10px; border-radius: 6px; font-size: 16px;
+        }
+
+        button {
+            background: var(--primary); color: black; border: none;
+            padding: 12px 24px; border-radius: 6px; font-weight: bold;
+            cursor: pointer; font-size: 16px; transition: 0.2s;
+        }
+
+        button:hover { background: #d4ac0d; transform: scale(1.02); }
+
+        #ui-top {
+            width: 100%; background: #111; padding: 12px;
+            display: flex; justify-content: space-around;
+            border-bottom: 2px solid #333; z-index: 100;
+            flex-wrap: wrap; gap: 10px;
+        }
+
+        .stat-badge {
+            background: #222; padding: 5px 15px; border-radius: 20px;
+            border: 1px solid #444; font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        #game-container {
+            position: relative; width: 720px; height: 1080px;
+            margin-top: 10px; border: 3px solid #333;
+            overflow: hidden; background: #000;
+        }
+
+        #map-bg-container { position: absolute; inset: 0; z-index: 1; }
+
+        .map-asset {
+            width: 100%; height: 100%; object-fit: cover;
+            opacity: 0.85; transition: opacity 0.5s;
+            display: none;
+        }
+
+        #grid {
+            position: absolute; inset: 0;
+            display: grid; grid-template-columns: repeat(24, 1fr);
+            grid-template-rows: repeat(36, 1fr); 
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .cell { border: 1px solid rgba(255,255,255,0.01); box-sizing: border-box; }
+        .cell.wall { background: transparent; border: none; }
         
-        /* ... resto del tuo CSS originale ... */
+        .loot-icon { opacity: 0; pointer-events: none; position: absolute; z-index: 10; }
+
+        .char {
+            position: absolute; width: 28px; height: 28px;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); z-index: 50;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .hero { box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .enemy { background: #5a0000; border-color: #ff4444; }
+        
+        .active-char { 
+            outline: 3px solid var(--primary); 
+            box-shadow: 0 0 20px var(--primary); 
+            z-index: 60;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(var(--tx), var(--ty)) scale(1); }
+            50% { transform: translate(var(--tx), var(--ty)) scale(1.15); }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1); }
+        }
+
+        #action-panel {
+            position: fixed; bottom: 210px; background: var(--panel);
+            border: 2px solid var(--primary); padding: 15px;
+            border-radius: 12px; display: none; flex-direction: column;
+            gap: 10px; z-index: 500; min-width: 250px;
+        }
+
+        .action-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .action-row button { padding: 8px 12px; font-size: 13px; }
+
+        .log-container {
+            position: fixed; bottom: 20px; right: 20px; width: 320px; height: 180px;
+            background: var(--panel); border: 1px solid #444; padding: 15px;
+            font-size: 12px; overflow-y: auto; border-radius: 8px; color: #ccc;
+        }
+
+        .log-entry { margin-bottom: 5px; border-left: 3px solid var(--primary); padding-left: 10px; }
+
+        #level-up-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center; z-index: 5000;
+        }
+
+        .skill-bar-container {
+            width: 100%; height: 20px; background: #333; border-radius: 10px;
+            margin: 15px 0; overflow: hidden; border: 1px solid #555;
+        }
+        .skill-bar-fill {
+            height: 100%; background: var(--primary); width: 0%;
+            transition: width 0.3s;
+        }
+
+        #inventory-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center; z-index: 4000;
+        }
+
+        .inventory-content {
+            background: #1a1a1a; border: 2px solid var(--primary);
+            padding: 25px; border-radius: 12px; width: 320px; text-align: center;
+        }
+
+        .transition-screen {
+            position: fixed; inset: 0; background: black; z-index: 4000;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; color: var(--primary); text-align: center;
+        }
+
+        #manual-load-ui { margin-top: 10px; display: none; padding: 10px; border-top: 1px solid #444; }
     </style>
-    <!-- NOTA: Per brevità ho accorciato il CSS, ma nel tuo file incolla tutto il CSS e JS originale -->
 </head>
 <body onclick="playIntroOnce()">
-    <!-- INCOLLA QUI TUTTO IL CORPO (BODY) DEL TUO HTML ORIGINALE -->
-    <div id="setup-screen">
-        <div class="card" style="background: rgba(0,0,0,0.8); border: 2px solid gold; padding: 2rem; border-radius: 15px; text-align: center;">
-            <h1 style="color: gold;">Arena del Destino</h1>
-            <p>Caricamento Saga Mappat...</p>
-            <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left;">
-                <label>Nome Eroe</label>
-                <input type="text" id="p-nome" style="padding: 10px; background: #222; color: white; border: 1px solid #444;" placeholder="Es. Bruenor...">
+
+    <audio id="bg-music"></audio>
+
+    <div id="level-up-modal">
+        <div class="card">
+            <h2 style="margin-bottom:5px;">Avanzamento Eroe</h2>
+            <p style="font-size: 14px; color:#aaa;">Punti guadagnati in battaglia!</p>
+            <div style="margin: 20px 0;">
+                <div style="display:flex; justify-content: space-between; font-size: 14px;">
+                    <span>Punti disponibili:</span>
+                    <strong id="available-points" style="color:var(--primary)">0</strong>
+                </div>
+                <div class="skill-bar-container"><div id="skill-bar-fill" class="skill-bar-fill"></div></div>
             </div>
-            <button onclick="alert('Gioco in fase di inizializzazione...')" style="padding: 15px 30px; background: gold; border: none; font-weight: bold; cursor: pointer;">ENTRA NEL DUNGEON</button>
+            <div style="display:flex; flex-direction: column; gap: 10px;">
+                <button onclick="upgradeStat('hp')" style="background:var(--danger); color:white;">❤️ Vita (+5 Max HP)</button>
+                <button onclick="upgradeStat('strength')" style="background:var(--success); color:white;">⚔️ Forza (+1 Danno)</button>
+                <button onclick="chiudiLevelUp()" id="btn-continua" style="margin-top:10px; display:none;">CONTINUA</button>
+            </div>
         </div>
     </div>
-    
+
+    <div id="transition-screen" class="transition-screen">
+        <h1 id="next-map-title">Area Successiva</h1>
+        <p>Ti addentri nell'oscurità...</p>
+    </div>
+
+    <div id="inventory-modal">
+        <div class="inventory-content">
+            <h2>Zaino dell'Eroe</h2>
+            <div id="inventory-list" style="text-align: left; margin: 15px 0;"></div>
+            <button onclick="chiudiInventario()" style="margin-top: 15px; width: 100%;">Chiudi</button>
+        </div>
+    </div>
+
+    <div id="setup-screen">
+        <div class="card">
+            <h1>Arena del Destino</h1>
+            <p style="color:#aaa; font-style: italic;">Saga Mappat - Menu Iniziale</p>
+            <div class="input-group">
+                <label>Nome Eroe</label>
+                <input type="text" id="p-nome" placeholder="Es. Bruenor...">
+                <label>Razza</label>
+                <select id="p-razza">
+                    <option value="Umano">Umano</option><option value="Elfo">Elfo</option><option value="Nano">Nano</option>
+                    <option value="Halfling">Halfling</option><option value="Dragonide">Dragonide</option><option value="Gnomo">Gnomo</option>
+                    <option value="Mezzelfo">Mezzelfo</option><option value="Mezzorco">Mezzorco</option><option value="Tiefling">Tiefling</option>
+                </select>
+                <label>Classe</label>
+                <select id="p-classe">
+                    <option value="Barbaro">Barbaro</option><option value="Guerriero">Guerriero</option>
+                    <option value="Paladino">Paladino</option><option value="Ranger">Ranger</option>
+                    <option value="Chierico">Chierico</option><option value="Ladro">Ladro</option>
+                    <option value="Bardo">Bardo</option><option value="Druido">Druido</option>
+                    <option value="Monaco">Monaco</option><option value="Warlock">Warlock</option>
+                    <option value="Mago">Mago</option><option value="Stregone">Stregone</option>
+                </select>
+            </div>
+            <button onclick="iniziaAvventura()">ENTRA NEL DUNGEON</button>
+        </div>
+    </div>
+
+    <div id="initiative-screen" class="overlay-screen" style="display:none;">
+        <div class="card">
+            <h2>Lancio Iniziativa</h2>
+            <div id="initiative-list" style="text-align: left; margin: 20px 0; max-height: 200px; overflow-y: auto;"></div>
+            <div id="manual-load-ui">
+                <p style="font-size: 12px; color: var(--danger);">⚠️ File .json non caricato.</p>
+                <label for="json-upload" style="cursor: pointer; background: #444; padding: 10px; border-radius: 6px; display: block; border: 1px solid var(--primary); margin: 10px 0;">
+                    📁 Carica file .json manualmente
+                </label>
+                <input type="file" id="json-upload" accept=".json" style="display:none;" onchange="handleManualJson(this)">
+            </div>
+            <button id="start-game-btn" style="display:none;" onclick="chiudiIniziativa()">INIZIA LIVELLO</button>
+        </div>
+    </div>
+
+    <div id="ui-top">
+        <div class="stat-badge">Mappa: <span id="map-name-display">1</span></div>
+        <div class="stat-badge">Stato: <span id="game-status">Esplorazione</span></div>
+        <div class="stat-badge">❤️ HP: <span id="hp-display" style="color:var(--danger)">0</span></div>
+        <div class="stat-badge">👣 Passi: <span id="moves-display" style="color:var(--info)">6</span>/6</div>
+        <div class="stat-badge">⭐ Punti: <span id="points-display" style="color:var(--primary)">0</span></div>
+        <button id="volume-btn" onclick="toggleVolume()">🔊 Vol</button>
+        <button onclick="apriInventario()">🎒 Zaino</button>
+    </div>
+
+    <div id="game-container">
+        <div id="map-bg-container">
+            <img id="map-img" class="map-asset">
+            <video id="map-video" class="map-asset" loop muted playsinline></video>
+        </div>
+        <div id="grid"></div>
+    </div>
+
+    <div id="action-panel">
+        <div style="font-size: 13px; color: var(--primary); text-align: center; margin-bottom: 8px;" id="turn-label">Tuo Turno</div>
+        <div class="action-row" id="weapon-buttons"></div>
+        <div class="action-row" style="margin-top:5px;">
+            <button onclick="apriInventario()" style="background:#333; color:white;">🎒 Zaino</button>
+            <button onclick="prossimoTurno()" style="background: #442222; color:white;">⏭️ Passa</button>
+        </div>
+    </div>
+
+    <div class="log-container" id="game-log"></div>
+
     <script>
-        // Incolla qui tutto il tuo JavaScript originale
-        console.log("Gioco caricato correttamente!");
+        const COLS = 24, ROWS = 36;
+        const CELL_W = 720 / COLS, CELL_H = 1080 / ROWS;
+        const HP_MAP = { "Barbaro": 12, "Guerriero": 10, "Paladino": 10, "Ranger": 10, "Chierico": 8, "Ladro": 8, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
+        
+        const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Halfling": "👦", "Dragonide": "🐲", "Gnomo": "🧙‍♂️", "Mezzelfo": "🧝‍♂️", "Mezzorco": "👹", "Tiefling": "😈" };
+        const CLASS_COLORS = { "Barbaro": "#c0392b", "Guerriero": "#7f8c8d", "Paladino": "#f1c40f", "Ranger": "#27ae60", "Chierico": "#ecf0f1", "Ladro": "#2c3e50", "Bardo": "#e67e22", "Druido": "#16a085", "Monaco": "#d35400", "Warlock": "#8e44ad", "Mago": "#2980b9", "Stregone": "#d63031" };
+        const ENEMY_ICONS = ["👹", "🧟", "💀", "🐺", "🦎", "👻"];
+
+        const WEAPON_CONFIG = {
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }, { name: "Giavellotto", dice: 6, range: 6, icon: "🎯" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }, { name: "Arco Lungo", dice: 8, range: 10, icon: "🏹" }],
+            "Paladino": [{ name: "Martello da Guerra", dice: 10, range: 1.5, icon: "🔨" }, { name: "Punizione Divina", dice: 8, range: 3, icon: "✨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }, { name: "Spada Corta", dice: 6, range: 1.5, icon: "🗡️" }],
+            "Chierico": [{ name: "Mazza", dice: 6, range: 1.5, icon: "🏏" }, { name: "Fiamma Sacra", dice: 8, range: 8, icon: "🔥" }],
+            "Ladro": [{ name: "Pugnale Furtivo", dice: 6, range: 1.5, icon: "🔪" }, { name: "Balestra Leggera", dice: 8, range: 8, icon: "🏹" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }, { name: "Beffa Crudele", dice: 4, range: 8, icon: "🎶" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }, { name: "Frusta di Spine", dice: 6, range: 6, icon: "🌿" }],
+            "Monaco": [{ name: "Colpo Senz'Armi", dice: 6, range: 1.5, icon: "👊" }, { name: "Dardi di Energia", dice: 4, range: 6, icon: "☄️" }],
+            "Warlock": [{ name: "Deflagrazione Occulta", dice: 10, range: 10, icon: "💜" }, { name: "Pugnale di Vetro", dice: 4, range: 1.5, icon: "🔪" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }, { name: "Palla di Fuoco", dice: 10, range: 8, icon: "💥" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }, { name: "Scossa Elettrica", dice: 8, range: 1.5, icon: "⚡" }]
+        };
+
+        const MOVIMENTO_MAX = 6;
+        let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
+        let isIntroPlaying = true;
+        const audioPlayer = document.getElementById('bg-music');
+
+        window.onload = () => { 
+            audioPlayer.src = "Music/intro.mp3"; 
+            audioPlayer.loop = true; 
+            audioPlayer.volume = 0.5; 
+        };
+
+        function playIntroOnce() { 
+            if (isIntroPlaying && audioPlayer.paused) audioPlayer.play().catch(e => {}); 
+        }
+
+        function caricaMusicaLivello(mapNumber) {
+            isIntroPlaying = false;
+            audioPlayer.loop = true;
+            audioPlayer.src = `Music/${mapNumber}.mp3`;
+            audioPlayer.play().catch(e => { console.log("Canzone non trovata."); });
+        }
+
+        function toggleVolume() {
+            audioPlayer.muted = !audioPlayer.muted;
+            document.getElementById('volume-btn').innerText = audioPlayer.muted ? "🔇 Mut" : "🔊 Vol";
+        }
+
+        function generaGriglia() {
+            const grid = document.getElementById("grid");
+            grid.innerHTML = "";
+            for (let i = 0; i < COLS * ROWS; i++) {
+                const c = document.createElement("div"); c.className = "cell"; grid.appendChild(c);
+            }
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('game-log');
+            const entry = document.createElement('div'); entry.className = 'log-entry'; entry.innerText = `> ${msg}`;
+            log.appendChild(entry); log.scrollTop = log.scrollHeight;
+        }
+
+        function iniziaAvventura() {
+            document.getElementById('setup-screen').style.display = 'none';
+            generaGriglia(); 
+            const nome = document.getElementById('p-nome').value || "Eroe";
+            const classe = document.getElementById('p-classe').value, razza = document.getElementById('p-razza').value;
+            let hp = HP_MAP[classe] || 10; if (razza === "Nano") hp += 1;
+            entities = [{ nome, hp, maxHP: hp, tipo: 'hero', classe, razza, x: 12, y: 2, dead: false, element: null, inventory: { potions: 0, coins: 0 }, movesRemaining: MOVIMENTO_MAX, weapons: WEAPON_CONFIG[classe], skillPoints: 0, strengthBonus: 0 }];
+            caricaMappaSequenziale(1);
+        }
+
+        function hasLineOfSight(p1, p2) {
+            let x0 = Math.floor(p1.x), y0 = Math.floor(p1.y);
+            let x1 = Math.floor(p2.x), y1 = Math.floor(p2.y);
+            let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+            let sx = (x0 < x1) ? 1 : -1, sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+            const cells = document.querySelectorAll('.cell');
+            while (true) {
+                if ((x0 !== Math.floor(p1.x) || y0 !== Math.floor(p1.y)) && (x0 !== Math.floor(p2.x) || y0 !== Math.floor(p2.y))) {
+                    let idx = y0 * COLS + x0;
+                    if (cells[idx] && cells[idx].classList.contains('wall')) return false;
+                }
+                if (x0 === x1 && y0 === y1) break;
+                let e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+            return true;
+        }
+
+        function caricaSfondoMappa(mapNumber) {
+            const imgEl = document.getElementById('map-img'), vidEl = document.getElementById('map-video');
+            imgEl.style.display = 'none'; vidEl.style.display = 'none'; vidEl.pause();
+            imgEl.src = `Maps/${mapNumber}.jpg`;
+            imgEl.onload = () => { imgEl.style.display = 'block'; };
+            imgEl.onerror = () => {
+                vidEl.src = `Maps/${mapNumber}.mp4`;
+                vidEl.oncanplay = () => { vidEl.style.display = 'block'; vidEl.play().catch(e => {}); };
+            };
+        }
+
+        async function caricaMappaSequenziale(mapNumber) {
+            currentMapNumber = mapNumber;
+            document.getElementById('map-name-display').innerText = mapNumber;
+            caricaSfondoMappa(mapNumber);
+            caricaMusicaLivello(mapNumber);
+            isCombat = false;
+            aggiornaStatoUI("Esplorazione", "var(--success)");
+            document.querySelectorAll('.cell.wall').forEach(c => c.classList.remove('wall'));
+            
+            try {
+                const response = await fetch(`Maps/${mapNumber}.json`);
+                if (response.ok) applyLevelData(await response.json());
+                else document.getElementById('manual-load-ui').style.display = 'block';
+            } catch (e) { document.getElementById('manual-load-ui').style.display = 'block'; }
+
+            entities.forEach(ent => { if(ent.element) ent.element.remove(); });
+            const hero = entities.find(e => e.tipo === 'hero');
+            hero.x = 12; hero.y = 2; hero.dead = false; hero.movesRemaining = MOVIMENTO_MAX;
+            let enemyCount = 1 + Math.floor(mapNumber / 2); 
+            const newEntities = [hero];
+            for(let i=0; i < enemyCount; i++) {
+                newEntities.push({ nome: `Nemico ${i+1}`, hp: 5 + (mapNumber * 4), maxHP: 5 + (mapNumber * 4), tipo: 'enemy', x: Math.floor(Math.random() * 20) + 2, y: Math.floor(Math.random() * 8) + 24, ini: 0, dead: false, element: null, movesRemaining: MOVIMENTO_MAX, icon: ENEMY_ICONS[Math.floor(Math.random() * ENEMY_ICONS.length)] });
+            }
+            entities = newEntities;
+            lanciaIniziativa();
+            aggiornaPuntiUI();
+        }
+
+        function applyLevelData(data) {
+            const cells = document.querySelectorAll('.cell');
+            if (data.walls) data.walls.forEach(idx => { if(cells[idx]) cells[idx].classList.add('wall'); });
+            loots = {}; document.querySelectorAll('.loot-icon').forEach(l => l.remove());
+            if (data.loot) data.loot.forEach(item => {
+                const idx = parseInt(item.idx);
+                if (cells[idx]) loots[idx] = { type: item.type || "pozione", element: visualizzaLoot(idx, (item.type === "moneta" ? "💰" : "🧪")) };
+            });
+        }
+
+        function visualizzaLoot(idx, icon) {
+            const cell = document.createElement('div');
+            cell.className = 'char loot-icon'; cell.innerText = icon;
+            cell.style.left = (idx % COLS) * CELL_W + 'px'; cell.style.top = Math.floor(idx / COLS) * CELL_H + 'px';
+            cell.style.width = CELL_W + 'px'; cell.style.height = CELL_H + 'px';
+            document.getElementById('game-container').appendChild(cell);
+            return cell;
+        }
+
+        function handleManualJson(input) {
+            const reader = new FileReader();
+            reader.onload = (e) => { try { applyLevelData(JSON.parse(e.target.result)); document.getElementById('manual-load-ui').style.display = 'none'; } catch (err) { alert("JSON Errato"); } };
+            if(input.files[0]) reader.readAsText(input.files[0]);
+        }
+
+        function lanciaIniziativa() {
+            document.getElementById('initiative-screen').style.display = 'flex';
+            const list = document.getElementById('initiative-list'); list.innerHTML = "";
+            entities.forEach(ent => ent.ini = Math.floor(Math.random() * 20) + 1);
+            entities.sort((a, b) => b.ini - a.ini);
+            entities.forEach(e => { const div = document.createElement('div'); div.innerHTML = `🎲 <strong>${e.nome}</strong>: ${e.ini}`; div.style.color = e.tipo === 'hero' ? 'var(--info)' : 'var(--danger)'; list.appendChild(div); });
+            document.getElementById('start-game-btn').style.display = 'block';
+        }
+
+        function chiudiIniziativa() { document.getElementById('initiative-screen').style.display = 'none'; creaEntitaVisive(); selezionaEntita(0); aggiornaHPUI(); }
+
+        function creaEntitaVisive() {
+            const container = document.getElementById('game-container');
+            entities.forEach(ent => {
+                const el = document.createElement('div'); el.className = `char ${ent.tipo}`;
+                if (ent.tipo === 'hero') { el.innerText = RACE_ICONS[ent.razza] || "👤"; el.style.backgroundColor = CLASS_COLORS[ent.classe]; }
+                else el.innerText = ent.icon;
+                ent.element = el; container.appendChild(el); aggiornaPosizione(ent);
+            });
+        }
+
+        function aggiornaPosizione(ent) {
+            if (!ent.element) return;
+            const tx = ent.x * CELL_W, ty = ent.y * CELL_H;
+            ent.element.style.setProperty('--tx', `${tx}px`); ent.element.style.setProperty('--ty', `${ty}px`);
+            ent.element.style.transform = `translate(${tx}px, ${ty}px)`;
+            if (ent.tipo === 'hero') {
+                const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
+                if (loots[idx]) {
+                    if (loots[idx].type === "pozione") ent.inventory.potions++;
+                    else ent.inventory.coins += 10;
+                    loots[idx].element.remove(); delete loots[idx];
+                }
+                if (ent.y >= ROWS - 1) transizioneLivello();
+            }
+        }
+
+        function transizioneLivello() { document.getElementById('transition-screen').style.display = 'flex'; setTimeout(() => { document.getElementById('transition-screen').style.display = 'none'; caricaMappaSequenziale(currentMapNumber + 1); }, 1000); }
+        function aggiornaHPUI() { const hero = entities.find(e => e.tipo === 'hero'); document.getElementById('hp-display').innerText = hero.hp; }
+        function aggiornaPuntiUI() { const hero = entities.find(e => e.tipo === 'hero'); document.getElementById('points-display').innerText = hero.skillPoints; }
+
+        function selezionaEntita(idx) {
+            currentIndex = idx % entities.length; activeEntity = entities[currentIndex];
+            entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
+            if (!activeEntity || activeEntity.dead) { if (isCombat) return prossimoTurno(); return; }
+            activeEntity.movesRemaining = MOVIMENTO_MAX;
+            if (activeEntity.element) activeEntity.element.classList.add('active-char');
+            if (isCombat) {
+                if (activeEntity.tipo === 'enemy') setTimeout(() => turnoIA(activeEntity), 500);
+                else { document.getElementById('action-panel').style.display = 'flex'; renderWeaponButtons(activeEntity); }
+            }
+        }
+
+        function renderWeaponButtons(hero) {
+            const container = document.getElementById('weapon-buttons'); container.innerHTML = "";
+            hero.weapons.forEach(w => { const btn = document.createElement('button'); btn.innerHTML = `${w.icon} ${w.name}`; btn.onclick = () => attaccoEroe(w); container.appendChild(btn); });
+        }
+
+        function prossimoTurno() { if (!isCombat) return; currentIndex++; selezionaEntita(currentIndex); }
+
+        function muoviEroe(dx, dy) {
+            let mover = isCombat ? activeEntity : entities.find(e => e.tipo === 'hero');
+            if (!mover || mover.tipo === 'enemy' || (isCombat && mover.movesRemaining <= 0)) return;
+            const nx = mover.x + dx, ny = mover.y + dy;
+            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                const idx = Math.floor(ny) * COLS + Math.floor(nx);
+                if (document.querySelectorAll('.cell')[idx].classList.contains('wall')) return;
+                mover.x = nx; mover.y = ny; if (isCombat) mover.movesRemaining--;
+                aggiornaPosizione(mover);
+                if (!isCombat) {
+                    entities.filter(e => e.tipo === 'enemy' && !e.dead).forEach(en => {
+                        if (Math.sqrt(Math.pow(en.x - mover.x, 2) + Math.pow(en.y - mover.y, 2)) < 5) iniziaCombattimento();
+                    });
+                }
+            }
+        }
+
+        function iniziaCombattimento() { isCombat = true; aggiornaStatoUI("Combattimento", "var(--danger)"); selezionaEntita(0); }
+        function aggiornaStatoUI(testo, colore) { const s = document.getElementById('game-status'); s.innerText = testo; s.style.color = colore; }
+
+        function attaccoEroe(weapon) {
+            const hero = entities.find(e => e.tipo === 'hero');
+            const target = entities.filter(e => e.tipo === 'enemy' && !e.dead)[0];
+            if (!target) return;
+            const dist = Math.sqrt(Math.pow(hero.x - target.x, 2) + Math.pow(hero.y - target.y, 2));
+            if (dist <= weapon.range) {
+                const dmg = Math.floor(Math.random() * weapon.dice) + 1 + hero.strengthBonus;
+                target.hp -= dmg; addLog(`Colpisci per ${dmg} danni!`);
+                if (target.hp <= 0) { target.dead = true; target.element.style.opacity = 0.3; hero.skillPoints++; aggiornaPuntiUI(); }
+                controllaFineCombattimento(); prossimoTurno();
+            } else addLog("Troppo lontano!");
+        }
+
+        function controllaFineCombattimento() { if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) { isCombat = false; aggiornaStatoUI("Esplorazione", "var(--success)"); document.getElementById('action-panel').style.display = 'none'; mostraLevelUp(); } }
+        function mostraLevelUp() { document.getElementById('level-up-modal').style.display = 'flex'; document.getElementById('available-points').innerText = entities.find(e => e.tipo === 'hero').skillPoints; }
+        function upgradeStat(stat) { const hero = entities.find(e => e.tipo === 'hero'); if (hero.skillPoints > 0) { if (stat === 'hp') hero.maxHP += 5; else hero.strengthBonus++; hero.skillPoints--; aggiornaPuntiUI(); if (hero.skillPoints === 0) document.getElementById('btn-continua').style.display = 'block'; } }
+        function chiudiLevelUp() { document.getElementById('level-up-modal').style.display = 'none'; }
+
+        async function turnoIA(nemico) {
+            const hero = entities.find(e => e.tipo === 'hero');
+            const dist = Math.sqrt(Math.pow(nemico.x - hero.x, 2) + Math.pow(nemico.y - hero.y, 2));
+            if (dist < 1.5) { const dmg = Math.floor(Math.random() * 6) + 1; hero.hp -= dmg; aggiornaHPUI(); addLog(`Subisci ${dmg} danni!`); }
+            else { nemico.x += (hero.x > nemico.x ? 1 : -1); aggiornaPosizione(nemico); }
+            setTimeout(prossimoTurno, 500);
+        }
+
+        function apriInventario() { document.getElementById('inventory-modal').style.display = 'flex'; }
+        function chiudiInventario() { document.getElementById('inventory-modal').style.display = 'none'; }
+
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (['w', 'arrowup'].includes(k)) muoviEroe(0, -1);
+            if (['s', 'arrowdown'].includes(k)) muoviEroe(0, 1);
+            if (['a', 'arrowleft'].includes(k)) muoviEroe(-1, 0);
+            if (['d', 'arrowright'].includes(k)) muoviEroe(1, 0);
+        });
     </script>
 </body>
 </html>
 """
 
-# Funzione per codificare l'HTML e bypassare i blocchi del browser
+# 4. Funzione per la codifica Base64 (Previene errori di parsing del browser)
 def get_game_display(html_content):
     b64_html = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
     return f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1100px" style="border:none; overflow:hidden;" allow="autoplay"></iframe>'
 
-# Visualizzazione del gioco tramite l'iframe codificato
-st.components.v1.html(get_game_display(game_html), height=1100)
+# 5. Rendering del componente finale
+components.html(get_game_display(game_html), height=1100)
