@@ -9,12 +9,12 @@ BRANCH = "main"
 GITHUB_BASE = f"https://raw.githubusercontent.com/{USER}/{REPO}/{BRANCH}/"
 
 st.set_page_config(
-    page_title="D&D Arena Mobile", 
+    page_title="D&D Arena Tablet Edition", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# CSS per forzare Streamlit a sparire e lasciare spazio al gioco
+# CSS per forzare l'app a tutto schermo e rimuovere i margini di Streamlit
 st.markdown("""
     <style>
         .block-container { padding: 0rem; max-width: 100%; }
@@ -28,19 +28,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Mobile Pro
+# Template HTML/JS/CSS Ottimizzato per Tablet e Touch-Screen ampi
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D&D Arena Mobile Final</title>
+    <title>D&D Arena Tablet Edition</title>
     <style>
         :root {
             --primary: #f1c40f; 
             --bg: #000;
-            --panel: rgba(30, 30, 30, 0.95);
+            --panel: rgba(25, 25, 25, 0.95);
+            --ctrl-bg: #222;
         }
         * { 
             touch-action: none; 
@@ -51,44 +52,45 @@ html_template = """
         body { 
             background-color: var(--bg); 
             color: #eee; 
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0; padding: 0;
             display: flex; flex-direction: column; 
             height: 100dvh; width: 100vw;
             overflow: hidden;
         }
         
-        /* Setup Screen */
+        /* Schermata di Benvenuto */
         #setup-screen { 
             position: fixed; inset: 0; 
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
-            z-index: 3000; 
+            z-index: 5000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
         #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: -1; }
         .card { 
             background: var(--panel); border: 2px solid var(--primary); 
-            border-radius: 15px; padding: 20px; width: 85%; max-width: 320px; text-align: center; 
+            border-radius: 15px; padding: 30px; width: 80%; max-width: 450px; text-align: center; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
-        .input-group { margin: 10px 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+        .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
-            padding: 10px; border-radius: 8px; font-size: 16px; width: 100%;
+            padding: 15px; border-radius: 10px; font-size: 18px; width: 100%;
         }
         .start-btn { 
             background: var(--primary); color: black; border: none; 
-            padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 18px; margin-top: 10px;
+            padding: 20px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 22px; cursor: pointer;
         }
 
-        /* Top Header */
+        /* Header Statistiche */
         #ui-top { 
-            height: 45px; width: 100%; background: #111; 
+            height: 60px; width: 100%; background: #111; 
             display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 1px solid #333; font-size: 12px;
+            border-bottom: 2px solid #333; z-index: 1000;
         }
-        .stat-badge { font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 
-        /* Area Gioco Centrale */
+        /* Area di Gioco Centrale */
         #game-viewport {
             flex: 1;
             width: 100vw;
@@ -97,72 +99,74 @@ html_template = """
             justify-content: center;
             overflow: hidden;
             position: relative;
+            padding: 10px;
         }
         #game-container { 
             position: relative; 
+            height: 100%;
             aspect-ratio: 24 / 36;
-            height: 98%;
-            max-width: 98%;
             background: #111;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 30px rgba(0,0,0,1);
+            border: 1px solid #444;
         }
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); }
-        .cell.wall { background: transparent !important; } 
 
-        /* Personaggi */
+        /* Personaggi e Oggetti */
         .char { 
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.1s linear; font-size: 10px; 
+            transition: transform 0.15s linear; font-size: 14px; 
         }
-        .hero { box-shadow: 0 0 8px var(--primary); border: 2px solid var(--primary); z-index: 60; }
-        .enemy { background: #700; border-color: #f77; }
-        .active-char { border-color: #fff; box-shadow: 0 0 10px #fff; }
+        .hero { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); z-index: 100; }
+        .enemy { background: #800; border-color: #f88; }
+        .active-char { border-color: #fff; box-shadow: 0 0 20px #fff; z-index: 110; }
 
-        /* Controlli Inferiori */
+        /* Controlli Inferiori per Tablet */
         #controls-area {
-            height: 180px; width: 100%;
+            height: 250px; width: 100%;
             background: #111;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 15px; border-top: 1px solid #333;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 20px; border-top: 2px solid #333;
         }
         .d-pad {
-            display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px);
-            gap: 5px;
+            display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px);
+            gap: 10px;
         }
         .ctrl-btn {
-            background: #252525; border: 1px solid #444; border-radius: 12px;
+            background: var(--ctrl-bg); border: 2px solid #444; border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 20px; width: 55px; height: 55px;
+            color: white; font-size: 28px; width: 70px; height: 70px;
         }
-        .ctrl-btn:active { background: var(--primary); color: black; }
+        .ctrl-btn:active { background: var(--primary); color: black; transform: scale(0.95); }
 
-        .side-actions { display: flex; flex-direction: column; gap: 10px; }
+        .actions-group { display: flex; flex-direction: column; gap: 15px; }
         .action-btn {
-            width: 80px; height: 65px; border-radius: 12px; border: none;
-            font-weight: bold; font-size: 11px; color: white;
-            box-shadow: 0 4px 0 #222;
+            width: 140px; height: 80px; border-radius: 15px; border: none;
+            font-weight: bold; font-size: 16px; color: white; cursor: pointer;
+            box-shadow: 0 5px 0 #000;
         }
-        .action-btn:active { transform: translateY(2px); box-shadow: none; }
+        .action-btn:active { transform: translateY(3px); box-shadow: none; }
 
         /* Pannello Combattimento */
         #action-panel { 
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
-            background: var(--panel); border: 1px solid var(--primary); 
-            padding: 10px; border-radius: 12px; display: none; 
-            flex-direction: column; gap: 8px; z-index: 1000; width: 85%;
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            background: var(--panel); border: 3px solid var(--primary); 
+            padding: 15px; border-radius: 15px; display: none; 
+            flex-direction: column; gap: 10px; z-index: 2000; width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         
         .log-box { 
-            position: absolute; top: 10px; right: 10px; width: 110px; height: 70px; 
-            background: rgba(0,0,0,0.6); padding: 5px; font-size: 8px; 
-            overflow: hidden; border-radius: 5px; color: #ccc; pointer-events: none; z-index: 80;
+            position: absolute; bottom: 20px; right: 20px; width: 220px; height: 120px; 
+            background: rgba(0,0,0,0.8); padding: 10px; font-size: 12px; 
+            overflow-y: auto; border-radius: 10px; color: #ccc; pointer-events: none; 
+            z-index: 1000; border: 1px solid #333;
         }
-        .loot-icon { position: absolute; z-index: 10; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 24px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -170,19 +174,20 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0; font-size: 22px;">D&D ARENA</h1>
+            <h1 style="color:var(--primary); margin:0; font-size: 36px;">D&D ARENA</h1>
+            <p style="color:#aaa; margin-top:5px;">Edizione Tablet - Saga Mappat</p>
             <div class="input-group">
                 <label>Nome Eroe</label>
-                <input type="text" id="p-nome" placeholder="Guerriero">
+                <input type="text" id="p-nome" placeholder="Il tuo nome...">
                 <label>Classe</label>
                 <select id="p-classe">
-                    <option value="Guerriero">Guerriero</option>
-                    <option value="Mago">Mago</option>
-                    <option value="Barbaro">Barbaro</option>
-                    <option value="Ladro">Ladro</option>
+                    <option value="Guerriero">Guerriero (⚔️)</option>
+                    <option value="Mago">Mago (🪄)</option>
+                    <option value="Barbaro">Barbaro (🪓)</option>
+                    <option value="Ladro">Ladro (🔪)</option>
                 </select>
             </div>
-            <button class="start-btn" onclick="iniziaAvventura()">ENTRA ⚔️</button>
+            <button class="start-btn" onclick="iniziaAvventura()">INIZIA L'AVVENTURA ⚔️</button>
         </div>
     </div>
 
@@ -202,8 +207,8 @@ html_template = """
         </div>
         
         <div id="action-panel">
-            <div style="font-size:10px; color:var(--primary); text-align:center; font-weight:bold;">ATTACCA!</div>
-            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:6px;"></div>
+            <div style="font-size:14px; color:var(--primary); text-align:center; font-weight:bold; margin-bottom:5px;">COMBATTIMENTO</div>
+            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
         
         <div class="log-box" id="game-log"></div>
@@ -217,9 +222,9 @@ html_template = """
             <button class="ctrl-btn" onclick="muoviEroeBtn(1, 0)">▶</button>
         </div>
         
-        <div class="side-actions">
+        <div class="actions-group">
             <button class="action-btn" id="btn-potion" onclick="usaPozione()" style="background:#2ecc71;">CURA 🧪</button>
-            <button class="action-btn" onclick="prossimoTurno()" style="background:#444;">PASSA ⏭️</button>
+            <button class="action-btn" onclick="prossimoTurno()" style="background:#555;">PASSA ⏭️</button>
         </div>
     </div>
 
@@ -228,12 +233,11 @@ html_template = """
         const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
-        const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Mezzorco": "👹", "Tiefling": "😈" };
         const HP_MAP = { "Barbaro": 12, "Guerriero": 10, "Mago": 6, "Ladro": 8 };
         const WEAPON_CONFIG = {
-            "Guerriero": [{ name: "Spada", dice: 8, range: 1.5, icon: "⚔️" }],
-            "Mago": [{ name: "Dardo", dice: 4, range: 12, icon: "🪄" }],
-            "Barbaro": [{ name: "Ascia", dice: 12, range: 1.5, icon: "🪓" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }],
             "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }]
         };
 
@@ -283,25 +287,28 @@ html_template = """
             try {
                 const response = await fetch(`${BASE_URL}Maps/${mapNumber}.json`);
                 if (response.ok) applyLevelData(await response.json());
-            } catch (e) {}
+                else applyLevelData({});
+            } catch (e) { applyLevelData({}); }
 
             const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
             for(let i=0; i < 2; i++) {
                 entities.push({
-                    nome: "Nemico", hp: 10 + (mapNumber*5), tipo: 'enemy', 
-                    x: 5 + (i*10), y: 22, dead: false, icon: "👹"
+                    nome: "Mostro", hp: 10 + (mapNumber*6), tipo: 'enemy', 
+                    x: 6 + (i*10), y: 24, dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
             aggiornaUI();
+            addLog("Area " + mapNumber + " caricata.");
         }
 
         function applyLevelData(data) {
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
             if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
+            
             loots = {};
             document.querySelectorAll('.loot-icon').forEach(l => l.remove());
             if (data.loot) data.loot.forEach(item => {
@@ -336,7 +343,7 @@ html_template = """
                 const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
                 if (loots[idx]) {
                     if (loots[idx].type === 'pozione') ent.inventory.potions++;
-                    else ent.inventory.coins += 20;
+                    else ent.inventory.coins += 25;
                     loots[idx].element.remove(); delete loots[idx];
                     aggiornaUI();
                 }
@@ -367,13 +374,16 @@ html_template = """
         function usaPozione() {
             const hero = entities.find(e => e.tipo === 'hero');
             if (hero.inventory.potions > 0) {
-                hero.inventory.potions--; hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Salute +15"); aggiornaUI();
+                hero.inventory.potions--; 
+                hero.hp = Math.min(hero.maxHP, hero.hp + 15);
+                addLog("Cura effettuata (+15 HP)"); 
+                aggiornaUI();
             }
         }
 
         function aggiornaUI() {
             const hero = entities.find(e => e.tipo === 'hero');
+            if(!hero) return;
             document.getElementById('hp-display').innerText = hero.hp;
             document.getElementById('moves-display').innerText = hero.movesRemaining;
             document.getElementById('gold-display').innerText = hero.inventory.coins;
@@ -382,7 +392,8 @@ html_template = """
 
         function iniziaCombattimento() {
             if(isCombat) return;
-            isCombat = true;
+            isCombat = true; 
+            addLog("COMBATTIMENTO ATTIVATO!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
@@ -390,15 +401,17 @@ html_template = """
 
         function selezionaTurno() {
             if (!isCombat) return;
-            entities.forEach(e => e.element.classList.remove('active-char'));
+            entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
             activeEntity = entities[currentIndex % entities.length];
-            if(activeEntity.dead) return prossimoTurno();
+            if(!activeEntity || activeEntity.dead) return prossimoTurno();
             activeEntity.element.classList.add('active-char');
+            
+            const panel = document.getElementById('action-panel');
             if(activeEntity.tipo === 'enemy') {
-                document.getElementById('action-panel').style.display = 'none';
-                setTimeout(turnoIA, 600);
+                panel.style.display = 'none';
+                setTimeout(turnoIA, 700);
             } else {
-                document.getElementById('action-panel').style.display = 'flex';
+                panel.style.display = 'flex';
                 renderAzioni();
             }
         }
@@ -409,9 +422,9 @@ html_template = """
             container.innerHTML = '';
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
-                b.style.padding = '12px'; b.style.borderRadius = '8px'; b.style.border = 'none';
-                b.style.background = '#f1c40f'; b.style.fontWeight = 'bold';
-                b.innerHTML = `${w.icon} ATTACCA`;
+                b.style.padding = '15px'; b.style.borderRadius = '10px'; b.style.border = 'none';
+                b.style.background = '#f1c40f'; b.style.fontWeight = 'bold'; b.style.fontSize = '16px';
+                b.innerHTML = `${w.icon} ATTACCA (${w.name})`;
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
             });
@@ -422,30 +435,38 @@ html_template = """
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
             if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
-                let d = Math.floor(Math.random()*w.dice)+5; target.hp -= d;
-                addLog(`Danni: ${d}`);
-                if(target.hp <= 0) { target.dead = true; target.element.style.opacity = '0.2'; }
+                let d = Math.floor(Math.random()*w.dice)+6; 
+                target.hp -= d;
+                addLog(`Danni inflitti: ${d}`);
+                if(target.hp <= 0) { 
+                    target.dead = true; 
+                    target.element.style.opacity = '0.2';
+                    addLog("Nemico abbattuto!");
+                }
                 prossimoTurno();
-            }
+            } else addLog("Fuori portata!");
         }
 
         function turnoIA() {
-            if(!isCombat) return;
+            if(!isCombat || !activeEntity || activeEntity.dead) return prossimoTurno();
             const hero = entities.find(e => e.tipo === 'hero');
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
             if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
-                hero.hp -= 5; addLog("Colpito! -5");
-                if(hero.hp <= 0) { alert("SCONFITTA!"); location.reload(); }
+                let d = Math.floor(Math.random()*5)+3;
+                hero.hp -= d; addLog(`Colpito dal mostro: -${d} HP`);
+                if(hero.hp <= 0) { alert("SCONFITTA! L'eroe è caduto."); location.reload(); }
             }
-            setTimeout(prossimoTurno, 500);
+            setTimeout(prossimoTurno, 600);
         }
 
         function prossimoTurno() { 
             if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) {
-                isCombat = false; document.getElementById('action-panel').style.display = 'none';
-                addLog("VITTORIA"); return;
+                isCombat = false; 
+                document.getElementById('action-panel').style.display = 'none';
+                entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
+                addLog("VITTORIA!"); return;
             }
             currentIndex++; selezionaTurno(); 
         }
@@ -454,7 +475,7 @@ html_template = """
 </html>
 """
 
-# Rendering finale con calcolo altezza per evitare scrolling
+# Rendering finale con altezza corretta per tablet
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1000)
+components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1080)
