@@ -90,7 +90,7 @@ html_template = """
 
         #ui-top { 
             height: 60px; width: 100%; background: #111; 
-            display: flex; justify(content: center; align-items: center;
+            display: flex; justify-content: center; align-items: center;
             border-bottom: 2px solid #333; z-index: 1000; gap: 20px; flex-shrink: 0;
         }
         .stat-badge { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #222; border-radius: 10px; border: 1px solid #444; }
@@ -112,7 +112,7 @@ html_template = """
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 2px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: left 0.15s linear, top 0.15s linear; font-size: 18px; 
+            transition: left 0.1s linear, top 0.1s linear; font-size: 18px; 
             transform-origin: center;
         }
         .hero { box-shadow: 0 0 10px var(--primary); border: 2px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
@@ -255,7 +255,7 @@ html_template = """
             log.prepend(entry);
         }
 
-        // Funzione per controllare la linea di vista (Bresenham) corretta
+        // Algoritmo LoS migliorato
         function hasLineOfSight(p1, p2) {
             let x0 = Math.floor(p1.x), y0 = Math.floor(p1.y);
             let x1 = Math.floor(p2.x), y1 = Math.floor(p2.y);
@@ -265,10 +265,9 @@ html_template = """
             const cells = document.querySelectorAll('.cell');
 
             while (true) {
-                // Controllo se siamo arrivati al bersaglio
                 if (x0 === x1 && y0 === y1) break;
-
-                // Non controlliamo la cella di partenza per evitare auto-collisione
+                
+                // Ignora la cella di partenza nel controllo collisione
                 if (x0 !== Math.floor(p1.x) || y0 !== Math.floor(p1.y)) {
                     let idx = y0 * COLS + x0;
                     if (cells[idx] && cells[idx].classList.contains('wall')) return false;
@@ -398,7 +397,8 @@ html_template = """
                     hero.x = nx; hero.y = ny;
                     if(isCombat) {
                         hero.movesRemaining--;
-                        // Se finisce i passi, passa il turno automaticamente dopo un istante
+                        aggiornaUI();
+                        // Fine turno automatica se finisce i passi
                         if (hero.movesRemaining <= 0) {
                             setTimeout(() => {
                                 if (isCombat && activeEntity === hero) prossimoTurno();
@@ -422,12 +422,6 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             if (hero.inventory.potions > 0) {
                 hero.inventory.potions--; 
-                hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Cura effettuata (+15 HP)"); 
-                aggiornaUI();
-            }
-        }
-
         function aggiornaUI() {
             const hero = entities.find(e => e.tipo === 'hero');
             if(!hero) return;
@@ -442,7 +436,7 @@ html_template = """
             if(isCombat) return;
             isCombat = true; addLog("COMBATTIMENTO ATTIVATO!");
             entities.forEach(ent => { ent.ini = Math.floor(Math.random()*20)+1; ent.movesRemaining = MOVIMENTO_MAX; });
-            entities.sort((a,b) => b.ini - a.ini);
+            entities.sort((a, b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
         }
 
@@ -452,7 +446,7 @@ html_template = """
             activeEntity = entities[currentIndex % entities.length];
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
             activeEntity.element.classList.add('active-char');
-            activeEntity.movesRemaining = MOVIMENTO_MAX; // Reset passi a inizio turno
+            activeEntity.movesRemaining = MOVIMENTO_MAX;
             if(activeEntity.tipo === 'enemy') setTimeout(turnoIA, 600);
             else renderAzioni();
             aggiornaUI();
@@ -471,12 +465,20 @@ html_template = """
 
         function attacco(w) {
             const hero = entities.find(e => e.tipo === 'hero');
-            const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
+            // Cerca il nemico più vicino in gittata
+            const targets = entities.filter(e => e.tipo === 'enemy' && !e.dead).sort((a,b) => {
+                let da = Math.sqrt(Math.pow(hero.x-a.x,2)+Math.pow(hero.y-a.y,2));
+                let db = Math.sqrt(Math.pow(hero.x-b.x,2)+Math.pow(hero.y-b.y,2));
+                return da - db;
+            });
+            
+            const target = targets[0];
             if(!target) return;
+            
             const dist = Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2));
             if(dist <= w.range && hasLineOfSight(hero, target)) {
                 let d = Math.floor(Math.random()*w.dice)+6; target.hp -= d;
-                addLog("Colpisci per " + d + " danni!");
+                addLog("Colpisci " + target.nome + " per " + d + " danni!");
                 if(target.hp <= 0) { 
                     target.dead = true; target.element.style.opacity = '0.2'; addLog("Nemico ucciso!");
                     const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
@@ -492,17 +494,16 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             const cells = document.querySelectorAll('.cell');
 
-            // Il nemico si muove solo se vede l'eroe
             if (hasLineOfSight(activeEntity, hero)) {
                 while (activeEntity.movesRemaining > 0) {
                     let dist = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
-                    if (dist < 1.1) break; // Già a contatto
+                    if (dist < 1.1) break; 
 
                     let dx = hero.x > activeEntity.x ? 1 : (hero.x < activeEntity.x ? -1 : 0);
                     let dy = hero.y > activeEntity.y ? 1 : (hero.y < activeEntity.y ? -1 : 0);
                     
                     let moved = false;
-                    // Prova movimento orizzontale
+                    // Verifica collisione prima del passo
                     if (dx !== 0) {
                         let nx = activeEntity.x + dx;
                         let idx = activeEntity.y * COLS + nx;
@@ -510,7 +511,6 @@ html_template = """
                             activeEntity.x = nx; moved = true;
                         }
                     }
-                    // Se non può o dopo X, prova verticale
                     if (!moved && dy !== 0) {
                         let ny = activeEntity.y + dy;
                         let idx = ny * COLS + activeEntity.x;
@@ -519,19 +519,18 @@ html_template = """
                         }
                     }
                     
-                    if (!moved) break; // Bloccato dai muri
+                    if (!moved) break;
                     activeEntity.movesRemaining--;
                 }
                 aggiornaPosizione(activeEntity);
 
-                // Attacco se a contatto
                 if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
                     let d = Math.floor(Math.random()*6)+4;
                     hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
                     if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
                 }
             } else {
-                addLog("Il mostro ti cerca ma non ti vede...");
+                addLog("Il mostro ringhia nell'ombra...");
             }
             setTimeout(prossimoTurno, 600);
         }
@@ -561,4 +560,10 @@ html_template = """
 
 # Rendering finale
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
-components.html(game_html, height=1000, scrolling=False)
+components.html(game_html, height=1000, scrolling=False)             hero.hp = Math.min(hero.maxHP, hero.hp + 15);
+                addLog("Cura effettuata (+15 HP)"); 
+                aggiornaUI();
+            }
+        }
+
+   
