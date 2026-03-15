@@ -21,7 +21,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS
+# Template HTML/JS/CSS (Stringa standard, non f-string per evitare errori con le graffe {})
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -219,7 +219,6 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 2; hero.movesRemaining = 6;
             
-            // Pulisci nemici ma tieni eroe
             entities = [hero];
             let enemyCount = 1 + Math.floor(mapNumber / 1.5);
             for(let i=0; i<enemyCount; i++) {
@@ -273,7 +272,6 @@ html_template = """
             isCombat = true;
             addLog("COMBATTIMENTO!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
-            // IMPORTANTE: il riordino non influirà sul movimento perché cerchiamo il pg per TIPO
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0;
             selezionaTurno();
@@ -374,11 +372,8 @@ html_template = """
         }
 
         window.addEventListener('keydown', (e) => {
-            // CERCA L'EROE IN TUTTO L'ELENCO, NON SOLO IN POSIZIONE 0
             const hero = entities.find(e => e.tipo === 'hero');
             if (!hero || hero.dead) return;
-            
-            // SE SIAMO IN COMBATTIMENTO, BLOCCA SE NON È IL TURNO DELL'EROE
             if (isCombat && activeEntity !== hero) return;
             
             let nx = hero.x, ny = hero.y;
@@ -413,10 +408,7 @@ html_template = """
 </html>
 """
 
-### Cosa ho sistemato:
-1.  **Ricerca Eroe Dinamica:** Nel listener della tastiera, ora uso `entities.find(e => e.tipo === 'hero')`. Questo evita che il personaggio rimanga bloccato se l'elenco dei personaggi viene riordinato durante il combattimento.
-2.  **Reset Post-Lotta:** Nella funzione `controllaFineCombattimento`, ora pulisco lo stato `activeEntity` e rimuovo la classe CSS `active-char`. Questo assicura che il sistema di movimento "capisca" che la battaglia è finita e ti restituisca il controllo.
-3.  **Movimenti Infiniti in Esplorazione:** Ho rimosso il blocco dei movimenti fuori dal combattimento, così puoi esplorare liberamente le mappe.
-4.  **Resoconto HP:** Ho aggiunto un controllo per aggiornare gli HP anche subito dopo la vittoria, così sai sempre quanta vita ti è rimasta.
-
-Copia e incolla su GitHub e il gioco sarà fluido al 100%! Buon divertimento nella Saga Mappat!
+# Renderizzazione finale (Fix Linea 417)
+game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
+b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
+components.html(f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1180px" allow="autoplay"></iframe>', height=1180)
