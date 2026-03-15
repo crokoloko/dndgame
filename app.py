@@ -216,7 +216,7 @@ html_template = """
 
     <script>
         const BASE_URL = "__GITHUB_BASE__";
-        // Ripristinata densità originale
+        // Dimensioni griglia 24 Colonne e 36 Righe
         const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
@@ -256,12 +256,16 @@ html_template = """
         }
 
         function iniziaAvventura() {
+            // Nascondi schermata di avvio
             document.getElementById('setup-screen').style.display = 'none';
+            
+            // Genera Griglia Visiva
             const grid = document.getElementById("grid");
             grid.innerHTML = "";
             for (let i = 0; i < COLS * ROWS; i++) {
                 const c = document.createElement("div"); c.className = "cell"; grid.appendChild(c);
             }
+
             const nome = document.getElementById('p-nome').value || "Eroe";
             const classe = document.getElementById('p-classe').value;
             const razza = document.getElementById('p-razza').value;
@@ -269,12 +273,15 @@ html_template = """
             let hp = (HP_MAP[classe] || 10) + 20;
             if(razza === "Nano") hp += 5;
             
+            // Inizializza Eroe
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, razza,
                 x: 12, y: 3, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza] || "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
+
+            // Carica la prima mappa
             caricaMappaCompleta(1);
         }
 
@@ -294,17 +301,19 @@ html_template = """
             audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
             audioPlayer.play().catch(e => {});
 
+            // Carica dati del livello (Muri e Loot)
             try {
                 const response = await fetch(BASE_URL + "Maps/" + mapNumber + ".json");
                 if (response.ok) applyLevelData(await response.json());
                 else applyLevelData({});
             } catch (e) { applyLevelData({}); }
 
+            // Ripristina eroe e genera nemici
             const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
             
-            let enemyNum = 2;
+            let enemyNum = 2 + Math.floor(mapNumber / 3);
             for(let i=0; i < enemyNum; i++) {
                 entities.push({
                     nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
@@ -451,7 +460,7 @@ html_template = """
         }
 
         function attacco(w) {
-            const hero = entities.find(e => e.tipo hijacking= 'hero');
+            const hero = entities.find(e => e.tipo === 'hero');
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
             if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
