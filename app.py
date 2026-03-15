@@ -9,12 +9,12 @@ BRANCH = "main"
 GITHUB_BASE = f"https://raw.githubusercontent.com/{USER}/{REPO}/{BRANCH}/"
 
 st.set_page_config(
-    page_title="D&D Arena Tablet Edition", 
+    page_title="D&D Arena Tablet Vertical", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# CSS per forzare l'app a tutto schermo e rimuovere i margini di Streamlit
+# CSS per forzare Streamlit a sparire e lasciare spazio al gioco verticale
 st.markdown("""
     <style>
         .block-container { padding: 0rem; max-width: 100%; }
@@ -28,20 +28,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Ottimizzato per Tablet e Touch-Screen ampi
+# Template HTML/JS/CSS Ottimizzato per Tablet Verticale (Rapporto 24:36)
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D&D Arena Tablet Edition</title>
+    <title>D&D Arena Tablet Vertical</title>
     <style>
         :root {
             --primary: #f1c40f; 
             --bg: #000;
-            --panel: rgba(25, 25, 25, 0.95);
-            --ctrl-bg: #222;
+            --panel: rgba(25, 25, 25, 0.98);
+            --ctrl-bg: #1a1a1a;
         }
         * { 
             touch-action: none; 
@@ -59,7 +59,7 @@ html_template = """
             overflow: hidden;
         }
         
-        /* Schermata di Benvenuto */
+        /* Setup Screen */
         #setup-screen { 
             position: fixed; inset: 0; 
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
@@ -70,7 +70,6 @@ html_template = """
         .card { 
             background: var(--panel); border: 2px solid var(--primary); 
             border-radius: 15px; padding: 30px; width: 80%; max-width: 450px; text-align: center; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
         .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
         input, select { 
@@ -82,55 +81,56 @@ html_template = """
             padding: 20px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 22px; cursor: pointer;
         }
 
-        /* Header Statistiche */
+        /* Top Bar */
         #ui-top { 
             height: 60px; width: 100%; background: #111; 
             display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 2px solid #333; z-index: 1000;
+            border-bottom: 2px solid #333; z-index: 1000; flex-shrink: 0;
         }
-        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; }
 
-        /* Area di Gioco Centrale */
+        /* Area Gioco (Verticale) */
         #game-viewport {
             flex: 1;
             width: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
             position: relative;
-            padding: 10px;
+            background: #050505;
+            overflow: hidden;
         }
         #game-container { 
             position: relative; 
             height: 100%;
-            aspect-ratio: 24 / 36;
-            background: #111;
+            aspect-ratio: 24 / 36; /* Forza il verticale 2:3 */
+            background: #000;
             box-shadow: 0 0 30px rgba(0,0,0,1);
-            border: 1px solid #444;
+            border: 1px solid #333;
         }
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); }
+        .cell.wall { background: transparent !important; }
 
-        /* Personaggi e Oggetti */
+        /* Personaggi */
         .char { 
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.15s linear; font-size: 14px; 
+            transition: transform 0.1s linear; font-size: 14px; 
         }
         .hero { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); z-index: 100; }
         .enemy { background: #800; border-color: #f88; }
         .active-char { border-color: #fff; box-shadow: 0 0 20px #fff; z-index: 110; }
 
-        /* Controlli Inferiori per Tablet */
+        /* Controlli Tablet Inferiori */
         #controls-area {
-            height: 250px; width: 100%;
+            height: 240px; width: 100%;
             background: #111;
             display: flex; justify-content: space-around; align-items: center;
-            padding: 20px; border-top: 2px solid #333;
+            padding: 15px; border-top: 2px solid #333; flex-shrink: 0;
         }
         .d-pad {
             display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px);
@@ -139,13 +139,13 @@ html_template = """
         .ctrl-btn {
             background: var(--ctrl-bg); border: 2px solid #444; border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 28px; width: 70px; height: 70px;
+            color: white; font-size: 30px; width: 70px; height: 70px;
         }
         .ctrl-btn:active { background: var(--primary); color: black; transform: scale(0.95); }
 
         .actions-group { display: flex; flex-direction: column; gap: 15px; }
         .action-btn {
-            width: 140px; height: 80px; border-radius: 15px; border: none;
+            width: 150px; height: 85px; border-radius: 15px; border: none;
             font-weight: bold; font-size: 16px; color: white; cursor: pointer;
             box-shadow: 0 5px 0 #000;
         }
@@ -153,17 +153,17 @@ html_template = """
 
         /* Pannello Combattimento */
         #action-panel { 
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
             background: var(--panel); border: 3px solid var(--primary); 
             padding: 15px; border-radius: 15px; display: none; 
-            flex-direction: column; gap: 10px; z-index: 2000; width: 300px;
+            flex-direction: column; gap: 10px; z-index: 2000; width: 320px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         
         .log-box { 
-            position: absolute; bottom: 20px; right: 20px; width: 220px; height: 120px; 
-            background: rgba(0,0,0,0.8); padding: 10px; font-size: 12px; 
-            overflow-y: auto; border-radius: 10px; color: #ccc; pointer-events: none; 
+            position: absolute; top: 10px; right: 10px; width: 200px; height: 110px; 
+            background: rgba(0,0,0,0.8); padding: 10px; font-size: 11px; 
+            overflow-y: hidden; border-radius: 10px; color: #ccc; pointer-events: none; 
             z-index: 1000; border: 1px solid #333;
         }
         .loot-icon { position: absolute; z-index: 10; font-size: 24px; display: flex; align-items: center; justify-content: center; }
@@ -175,19 +175,19 @@ html_template = """
     <div id="setup-screen">
         <div class="card">
             <h1 style="color:var(--primary); margin:0; font-size: 36px;">D&D ARENA</h1>
-            <p style="color:#aaa; margin-top:5px;">Edizione Tablet - Saga Mappat</p>
+            <p style="color:#aaa; margin-top:5px;">SAGA MAPPAT - TABLET VERTICAL</p>
             <div class="input-group">
                 <label>Nome Eroe</label>
-                <input type="text" id="p-nome" placeholder="Il tuo nome...">
+                <input type="text" id="p-nome" placeholder="Inserisci nome...">
                 <label>Classe</label>
                 <select id="p-classe">
-                    <option value="Guerriero">Guerriero (⚔️)</option>
-                    <option value="Mago">Mago (🪄)</option>
-                    <option value="Barbaro">Barbaro (🪓)</option>
-                    <option value="Ladro">Ladro (🔪)</option>
+                    <option value="Guerriero">Guerriero ⚔️</option>
+                    <option value="Mago">Mago 🪄</option>
+                    <option value="Barbaro">Barbaro 🪓</option>
+                    <option value="Ladro">Ladro 🔪</option>
                 </select>
             </div>
-            <button class="start-btn" onclick="iniziaAvventura()">INIZIA L'AVVENTURA ⚔️</button>
+            <button class="start-btn" onclick="iniziaAvventura()">ENTRA NEL DUNGEON ⚔️</button>
         </div>
     </div>
 
@@ -207,7 +207,7 @@ html_template = """
         </div>
         
         <div id="action-panel">
-            <div style="font-size:14px; color:var(--primary); text-align:center; font-weight:bold; margin-bottom:5px;">COMBATTIMENTO</div>
+            <div style="font-size:14px; color:var(--primary); text-align:center; font-weight:bold; margin-bottom:5px;">Tuo Turno</div>
             <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
         
@@ -224,7 +224,7 @@ html_template = """
         
         <div class="actions-group">
             <button class="action-btn" id="btn-potion" onclick="usaPozione()" style="background:#2ecc71;">CURA 🧪</button>
-            <button class="action-btn" onclick="prossimoTurno()" style="background:#555;">PASSA ⏭️</button>
+            <button class="action-btn" onclick="prossimoTurno()" style="background:#444;">PASSA ⏭️</button>
         </div>
     </div>
 
@@ -475,7 +475,7 @@ html_template = """
 </html>
 """
 
-# Rendering finale con altezza corretta per tablet
+# Rendering finale con altezza corretta per iframe Streamlit su Tablet
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
 components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1080)
