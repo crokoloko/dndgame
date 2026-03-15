@@ -9,104 +9,110 @@ BRANCH = "main"
 GITHUB_BASE = f"https://raw.githubusercontent.com/{USER}/{REPO}/{BRANCH}/"
 
 st.set_page_config(
-    page_title="D&D Arena Tablet Vertical", 
+    page_title="D&D Arena PC Edition", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# CSS per forzare Streamlit a sparire e lasciare spazio al gioco verticale
+# CSS per pulire l'interfaccia Streamlit e ottimizzare per PC
 st.markdown("""
     <style>
         .block-container { padding: 0rem; max-width: 100%; }
-        .stApp { background-color: #000; }
+        .stApp { background-color: #050505; }
         footer {visibility: hidden;}
         header {visibility: hidden;}
-        iframe { border: none; width: 100vw; height: 100dvh; display: block; }
+        iframe { border: none; width: 100vw; height: 100vh; display: block; }
         [data-testid="stHeader"] {display: none;}
         #MainMenu {visibility: hidden;}
-        div[data-testid="stVerticalBlock"] > div:has(iframe) { padding: 0; }
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Ottimizzato per Tablet Verticale (Rapporto 24:36)
+# Template HTML/JS/CSS Ottimizzato per PC
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D&D Arena Tablet Vertical</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Arena PC Edition</title>
     <style>
         :root {
             --primary: #f1c40f; 
-            --bg: #000;
-            --panel: rgba(25, 25, 25, 0.98);
-            --ctrl-bg: #1a1a1a;
-        }
-        * { 
-            touch-action: none; 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            box-sizing: border-box; 
+            --danger: #e74c3c;
+            --success: #2ecc71; 
+            --bg: #050505;
+            --panel: rgba(20, 20, 20, 0.9);
         }
         body { 
             background-color: var(--bg); 
             color: #eee; 
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0; padding: 0;
             display: flex; flex-direction: column; 
-            height: 100dvh; width: 100vw;
+            height: 100vh; width: 100vw;
             overflow: hidden;
         }
         
-        /* Setup Screen */
+        /* Schermata di Benvenuto */
         #setup-screen { 
             position: fixed; inset: 0; 
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
             z-index: 5000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: -1; }
+        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: -1; }
         .card { 
             background: var(--panel); border: 2px solid var(--primary); 
-            border-radius: 15px; padding: 30px; width: 80%; max-width: 450px; text-align: center; 
+            border-radius: 15px; padding: 40px; width: 450px; text-align: center; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
-        .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        .input-group { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        label { font-size: 14px; color: var(--primary); font-weight: bold; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
-            padding: 15px; border-radius: 10px; font-size: 18px; width: 100%;
+            padding: 12px; border-radius: 8px; font-size: 16px; width: 100%;
         }
         .start-btn { 
             background: var(--primary); color: black; border: none; 
-            padding: 20px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 22px; cursor: pointer;
+            padding: 18px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 20px; cursor: pointer;
+            transition: 0.3s;
         }
+        .start-btn:hover { background: #fff; transform: scale(1.02); }
 
-        /* Top Bar */
+        /* Dashboard Superiore (PC Style) */
         #ui-top { 
-            height: 60px; width: 100%; background: #111; 
-            display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 2px solid #333; z-index: 1000; flex-shrink: 0;
+            height: 70px; width: 100%; background: #111; 
+            display: flex; justify-content: center; align-items: center;
+            border-bottom: 2px solid #333; z-index: 1000; gap: 30px;
         }
-        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; }
+        .stat-badge { font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 10px; padding: 5px 15px; background: #222; border-radius: 10px; border: 1px solid #444; }
 
-        /* Area Gioco (Verticale) */
-        #game-viewport {
+        /* Layout Principale */
+        #main-layout {
+            display: flex;
             flex: 1;
             width: 100vw;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        /* Area Gioco */
+        #game-viewport {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            background: #050505;
-            overflow: hidden;
+            background: #000;
+            padding: 20px;
         }
         #game-container { 
             position: relative; 
             height: 100%;
-            aspect-ratio: 24 / 36; /* Forza il verticale 2:3 */
-            background: #000;
-            box-shadow: 0 0 30px rgba(0,0,0,1);
-            border: 1px solid #333;
+            aspect-ratio: 24 / 36;
+            background: #111;
+            box-shadow: 0 0 40px rgba(0,0,0,1);
+            border: 2px solid #333;
         }
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
@@ -114,59 +120,75 @@ html_template = """
         .cell { border: 1px solid rgba(255,255,255,0.02); }
         .cell.wall { background: transparent !important; }
 
-        /* Personaggi */
+        /* Entità */
         .char { 
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.1s linear; font-size: 14px; 
+            transition: transform 0.1s linear; font-size: 16px; 
         }
-        .hero { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); z-index: 100; }
+        .hero { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
         .enemy { background: #800; border-color: #f88; }
-        .active-char { border-color: #fff; box-shadow: 0 0 20px #fff; z-index: 110; }
+        .active-char { border-color: #fff; box-shadow: 0 0 25px #fff; z-index: 110; outline: 2px solid #fff; }
 
-        /* Controlli Tablet Inferiori */
-        #controls-area {
-            height: 240px; width: 100%;
+        /* Pannello Info Destro */
+        #side-panel {
+            width: 350px;
             background: #111;
-            display: flex; justify-content: space-around; align-items: center;
-            padding: 15px; border-top: 2px solid #333; flex-shrink: 0;
+            border-left: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
         }
-        .d-pad {
-            display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px);
-            gap: 10px;
-        }
-        .ctrl-btn {
-            background: var(--ctrl-bg); border: 2px solid #444; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 30px; width: 70px; height: 70px;
-        }
-        .ctrl-btn:active { background: var(--primary); color: black; transform: scale(0.95); }
 
-        .actions-group { display: flex; flex-direction: column; gap: 15px; }
-        .action-btn {
-            width: 150px; height: 85px; border-radius: 15px; border: none;
-            font-weight: bold; font-size: 16px; color: white; cursor: pointer;
-            box-shadow: 0 5px 0 #000;
-        }
-        .action-btn:active { transform: translateY(3px); box-shadow: none; }
-
-        /* Pannello Combattimento */
-        #action-panel { 
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
-            background: var(--panel); border: 3px solid var(--primary); 
-            padding: 15px; border-radius: 15px; display: none; 
-            flex-direction: column; gap: 10px; z-index: 2000; width: 320px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        .action-card {
+            background: #222;
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
         }
         
-        .log-box { 
-            position: absolute; top: 10px; right: 10px; width: 200px; height: 110px; 
-            background: rgba(0,0,0,0.8); padding: 10px; font-size: 11px; 
-            overflow-y: hidden; border-radius: 10px; color: #ccc; pointer-events: none; 
-            z-index: 1000; border: 1px solid #333;
+        #log-box { 
+            flex: 1;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 13px;
+            overflow-y: auto;
+            color: #aaa;
+            font-family: 'Courier New', Courier, monospace;
         }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #222; padding-bottom: 3px; }
+
+        /* Bottoni */
+        .pc-btn {
+            background: var(--primary);
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .pc-btn:hover { background: #fff; }
+        .pc-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+
         .loot-icon { position: absolute; z-index: 10; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        
+        kbd {
+            background: #444;
+            border-radius: 4px;
+            border: 1px solid #666;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -174,57 +196,59 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0; font-size: 36px;">D&D ARENA</h1>
-            <p style="color:#aaa; margin-top:5px;">SAGA MAPPAT - TABLET VERTICAL</p>
+            <h1 style="color:var(--primary); margin:0; font-size: 42px;">D&D ARENA</h1>
+            <p style="color:#aaa; margin-top:5px; font-weight:bold;">SAGA MAPPAT - PC EDITION</p>
             <div class="input-group">
-                <label>Nome Eroe</label>
-                <input type="text" id="p-nome" placeholder="Inserisci nome...">
-                <label>Classe</label>
+                <label>Nome del tuo Eroe</label>
+                <input type="text" id="p-nome" placeholder="Es. Valerius">
+                <label>Seleziona la tua Classe</label>
                 <select id="p-classe">
-                    <option value="Guerriero">Guerriero ⚔️</option>
-                    <option value="Mago">Mago 🪄</option>
-                    <option value="Barbaro">Barbaro 🪓</option>
-                    <option value="Ladro">Ladro 🔪</option>
+                    <option value="Guerriero">Guerriero (Spada e Scudo)</option>
+                    <option value="Mago">Mago (Incantesimi a distanza)</option>
+                    <option value="Barbaro">Barbaro (Danni pesanti)</option>
+                    <option value="Ladro">Ladro (Attacchi rapidi)</option>
                 </select>
             </div>
-            <button class="start-btn" onclick="iniziaAvventura()">ENTRA NEL DUNGEON ⚔️</button>
+            <button class="start-btn" onclick="iniziaAvventura()">COMINCIA LA SAGA ⚔️</button>
         </div>
     </div>
 
     <div id="ui-top">
-        <div class="stat-badge">❤️ <span id="hp-display">0</span></div>
-        <div class="stat-badge">💰 <span id="gold-display">0</span></div>
-        <div class="stat-badge">🧪 <span id="potion-display">0</span></div>
-        <div class="stat-badge">👣 <span id="moves-display">6</span></div>
+        <div class="stat-badge">❤️ HP: <span id="hp-display">0</span></div>
+        <div class="stat-badge">💰 ORO: <span id="gold-display">0</span></div>
+        <div class="stat-badge">🧪 POZIONI: <span id="potion-display">0</span></div>
+        <div class="stat-badge">👣 PASSI: <span id="moves-display">6</span></div>
+        <div style="font-size: 14px; color: var(--primary);">AREA: <span id="map-name-display">1</span></div>
     </div>
 
-    <div id="game-viewport">
-        <div id="game-container">
-            <div id="map-bg-container">
-                <img id="map-img" class="map-asset">
+    <div id="main-layout">
+        <div id="game-viewport">
+            <div id="game-container">
+                <div id="map-bg-container">
+                    <img id="map-img" class="map-asset">
+                </div>
+                <div id="grid"></div>
             </div>
-            <div id="grid"></div>
         </div>
-        
-        <div id="action-panel">
-            <div style="font-size:14px; color:var(--primary); text-align:center; font-weight:bold; margin-bottom:5px;">Tuo Turno</div>
-            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:10px;"></div>
-        </div>
-        
-        <div class="log-box" id="game-log"></div>
-    </div>
 
-    <div id="controls-area">
-        <div class="d-pad">
-            <div></div><button class="ctrl-btn" onclick="muoviEroeBtn(0, -1)">▲</button><div></div>
-            <button class="ctrl-btn" onclick="muoviEroeBtn(-1, 0)">◀</button>
-            <button class="ctrl-btn" onclick="muoviEroeBtn(0, 1)">▼</button>
-            <button class="ctrl-btn" onclick="muoviEroeBtn(1, 0)">▶</button>
-        </div>
-        
-        <div class="actions-group">
-            <button class="action-btn" id="btn-potion" onclick="usaPozione()" style="background:#2ecc71;">CURA 🧪</button>
-            <button class="action-btn" onclick="prossimoTurno()" style="background:#444;">PASSA ⏭️</button>
+        <div id="side-panel">
+            <div class="action-card">
+                <h3 style="color:var(--primary); margin-top:0;">AZIONI</h3>
+                <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:10px;">
+                    <p style="font-size:12px; color:#888;">Avvicinati a un nemico per combattere</p>
+                </div>
+                <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+                <button class="pc-btn" id="btn-potion" onclick="usaPozione()">USA POZIONE (P)</button>
+                <button class="pc-btn" onclick="prossimoTurno()" style="background:#555; color:white;">PASSA TURNO (SPAZIO)</button>
+            </div>
+
+            <div id="log-box">
+                <div class="log-entry">> Benvenuto nell'Arena del Destino.</div>
+            </div>
+
+            <div style="font-size:11px; color:#666; text-align:center;">
+                Comandi: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> per muoverti.
+            </div>
         </div>
     </div>
 
@@ -233,7 +257,8 @@ html_template = """
         const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
-        const HP_MAP = { "Barbaro": 12, "Guerriero": 10, "Mago": 6, "Ladro": 8 };
+        const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Mezzorco": "👹", "Tiefling": "😈" };
+        const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Mago": 8, "Ladro": 10 };
         const WEAPON_CONFIG = {
             "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
             "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
@@ -251,8 +276,12 @@ html_template = """
         }
 
         function addLog(msg) {
-            const log = document.getElementById('game-log');
-            log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
+            const log = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerText = `> ${msg}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
         }
 
         function iniziaAvventura() {
@@ -268,7 +297,7 @@ html_template = """
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, 
                 x: 12, y: 3, movesRemaining: 6, element: null, 
-                ini: 0, dead: false, icon: "👤",
+                ini: 0, dead: false, icon: "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
             caricaMappaCompleta(1);
@@ -276,8 +305,8 @@ html_template = """
 
         async function caricaMappaCompleta(mapNumber) {
             currentMapNumber = mapNumber;
+            document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
-            document.getElementById('action-panel').style.display = 'none';
             const imgEl = document.getElementById('map-img');
             imgEl.src = BASE_URL + `Maps/${mapNumber}.jpg`;
             imgEl.onload = () => imgEl.style.display = 'block';
@@ -293,15 +322,15 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
-            for(let i=0; i < 2; i++) {
+            for(let i=0; i < 3; i++) {
                 entities.push({
-                    nome: "Mostro", hp: 10 + (mapNumber*6), tipo: 'enemy', 
-                    x: 6 + (i*10), y: 24, dead: false, icon: "👹"
+                    nome: "Mostro", hp: 12 + (mapNumber*6), tipo: 'enemy', 
+                    x: 4 + (i*7), y: 22, dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
             aggiornaUI();
-            addLog("Area " + mapNumber + " caricata.");
+            addLog("Ingresso nell'area " + mapNumber);
         }
 
         function applyLevelData(data) {
@@ -342,15 +371,20 @@ html_template = """
             if (ent.tipo === 'hero') {
                 const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
                 if (loots[idx]) {
-                    if (loots[idx].type === 'pozione') ent.inventory.potions++;
-                    else ent.inventory.coins += 25;
+                    if (loots[idx].type === 'pozione') {
+                        ent.inventory.potions++;
+                        addLog("Hai raccolto una pozione!");
+                    } else {
+                        ent.inventory.coins += 25;
+                        addLog("Hai trovato 25 monete d'oro!");
+                    }
                     loots[idx].element.remove(); delete loots[idx];
                     aggiornaUI();
                 }
             }
         }
 
-        function muoviEroeBtn(dx, dy) {
+        function muoviEroe(dx, dy) {
             const hero = entities.find(e => e.tipo === 'hero');
             if (!hero || (isCombat && activeEntity !== hero)) return;
             let nx = hero.x + dx, ny = hero.y + dy;
@@ -376,8 +410,10 @@ html_template = """
             if (hero.inventory.potions > 0) {
                 hero.inventory.potions--; 
                 hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Cura effettuata (+15 HP)"); 
+                addLog("Hai bevuto una pozione. (+15 HP)"); 
                 aggiornaUI();
+            } else {
+                addLog("Non hai pozioni!");
             }
         }
 
@@ -388,6 +424,7 @@ html_template = """
             document.getElementById('moves-display').innerText = hero.movesRemaining;
             document.getElementById('gold-display').innerText = hero.inventory.coins;
             document.getElementById('potion-display').innerText = hero.inventory.potions;
+            document.getElementById('btn-potion').disabled = hero.inventory.potions <= 0;
         }
 
         function iniziaCombattimento() {
@@ -406,14 +443,12 @@ html_template = """
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
             activeEntity.element.classList.add('active-char');
             
-            const panel = document.getElementById('action-panel');
             if(activeEntity.tipo === 'enemy') {
-                panel.style.display = 'none';
-                setTimeout(turnoIA, 700);
+                setTimeout(turnoIA, 600);
             } else {
-                panel.style.display = 'flex';
                 renderAzioni();
             }
+            aggiornaUI();
         }
 
         function renderAzioni() {
@@ -422,9 +457,8 @@ html_template = """
             container.innerHTML = '';
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
-                b.style.padding = '15px'; b.style.borderRadius = '10px'; b.style.border = 'none';
-                b.style.background = '#f1c40f'; b.style.fontWeight = 'bold'; b.style.fontSize = '16px';
-                b.innerHTML = `${w.icon} ATTACCA (${w.name})`;
+                b.className = 'pc-btn';
+                b.innerHTML = `${w.icon} ATTACCA CON ${w.name}`;
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
             });
@@ -437,14 +471,14 @@ html_template = """
             if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
                 let d = Math.floor(Math.random()*w.dice)+6; 
                 target.hp -= d;
-                addLog(`Danni inflitti: ${d}`);
+                addLog(`Colpisci ${target.nome} per ${d} danni!`);
                 if(target.hp <= 0) { 
                     target.dead = true; 
                     target.element.style.opacity = '0.2';
-                    addLog("Nemico abbattuto!");
+                    addLog("Nemico sconfitto!");
                 }
                 prossimoTurno();
-            } else addLog("Fuori portata!");
+            } else addLog("Il nemico è fuori portata!");
         }
 
         function turnoIA() {
@@ -454,9 +488,9 @@ html_template = """
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
             if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
-                let d = Math.floor(Math.random()*5)+3;
-                hero.hp -= d; addLog(`Colpito dal mostro: -${d} HP`);
-                if(hero.hp <= 0) { alert("SCONFITTA! L'eroe è caduto."); location.reload(); }
+                let d = Math.floor(Math.random()*5)+4;
+                hero.hp -= d; addLog(`Il mostro ti colpisce: -${d} HP`);
+                if(hero.hp <= 0) { alert("L'eroe è caduto in battaglia."); location.reload(); }
             }
             setTimeout(prossimoTurno, 600);
         }
@@ -464,18 +498,30 @@ html_template = """
         function prossimoTurno() { 
             if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) {
                 isCombat = false; 
-                document.getElementById('action-panel').style.display = 'none';
                 entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
-                addLog("VITTORIA!"); return;
+                addLog("Vittoria! Il cammino è libero."); 
+                aggiornaUI();
+                return;
             }
             currentIndex++; selezionaTurno(); 
         }
+
+        // --- CONTROLLI TASTIERA PC ---
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (['w', 'arrowup'].includes(key)) muoviEroe(0, -1);
+            if (['s', 'arrowdown'].includes(key)) muoviEroe(0, 1);
+            if (['a', 'arrowleft'].includes(key)) muoviEroe(-1, 0);
+            if (['d', 'arrowright'].includes(key)) muoviEroe(1, 0);
+            if (key === 'p') usaPozione();
+            if (key === ' ' || key === 'enter') prossimoTurno();
+        });
     </script>
 </body>
 </html>
 """
 
-# Rendering finale con altezza corretta per iframe Streamlit su Tablet
+# Rendering finale
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1080)
+components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1000)
