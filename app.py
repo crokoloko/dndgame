@@ -105,18 +105,18 @@ html_template = """
         
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
-        #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
+        #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(18, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); }
 
         .char { 
-            position: absolute; width: 4.16%; height: 2.77%; 
-            border-radius: 50%; border: 1px solid white; 
+            position: absolute; width: 8.33%; height: 5.55%; 
+            border-radius: 50%; border: 3px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.1s linear; font-size: 16px; 
+            transition: transform 0.15s linear; font-size: 32px; 
         }
-        .hero { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
+        .hero { box-shadow: 0 0 20px var(--primary); border: 4px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
         .enemy { background: #800; border-color: #f88; }
-        .active-char { border-color: #fff; box-shadow: 0 0 25px #fff; z-index: 110; outline: 2px solid #fff; }
+        .active-char { border-color: #fff; box-shadow: 0 0 35px #fff; z-index: 110; outline: 4px solid #fff; }
 
         #side-panel { width: 340px; background: #111; border-left: 2px solid #333; display: flex; flex-direction: column; padding: 20px; gap: 15px; flex-shrink: 0; }
         .action-card { background: #222; border: 1px solid var(--primary); border-radius: 12px; padding: 15px; text-align: center; }
@@ -127,7 +127,7 @@ html_template = """
         .pc-btn:hover { background: #fff; }
         .pc-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        .loot-icon { position: absolute; z-index: 10; font-size: 22px; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: float 2s infinite ease-in-out; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 32px; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: float 2s infinite ease-in-out; }
         @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
         
         kbd { background: #444; border-radius: 4px; border: 1px solid #666; color: #fff; padding: 2px 6px; font-size: 11px; margin: 0 2px; }
@@ -215,25 +215,26 @@ html_template = """
 
     <script>
         const BASE_URL = "__GITHUB_BASE__";
-        const COLS = 24, ROWS = 36;
+        // Raddoppiata dimensione celle (Griglia 12x18 invece di 24x36)
+        const COLS = 12, ROWS = 18;
         const audioPlayer = document.getElementById('bg-music');
 
         const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Halfling": "👦", "Dragonide": "🐲", "Gnomo": "🧙‍♂️", "Mezzelfo": "🧝‍♂️", "Mezzorco": "👹", "Tiefling": "😈" };
         const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Paladino": 12, "Ranger": 10, "Chierico": 10, "Ladro": 10, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
         
         const WEAPON_CONFIG = {
-            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }],
-            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
-            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.5, icon: "🔨" }],
-            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }],
-            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.5, icon: "🏏" }],
-            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }],
-            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }],
-            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }],
-            "Monaco": [{ name: "Pugni", dice: 6, range: 1.5, icon: "👊" }],
-            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 10, icon: "💜" }],
-            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
-            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }]
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.1, icon: "🪓" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.1, icon: "⚔️" }],
+            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.1, icon: "🔨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 6, icon: "🏹" }],
+            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.1, icon: "🏏" }],
+            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.1, icon: "🔪" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.1, icon: "🤺" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.1, icon: "🦯" }],
+            "Monaco": [{ name: "Pugni", dice: 6, range: 1.1, icon: "👊" }],
+            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 5, icon: "💜" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 6, icon: "🪄" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 5, icon: "☄️" }]
         };
 
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
@@ -269,7 +270,7 @@ html_template = """
             
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, razza,
-                x: 12, y: 3, movesRemaining: 6, element: null, 
+                x: 6, y: 1, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza] || "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
@@ -283,11 +284,9 @@ html_template = """
             
             const imgEl = document.getElementById('map-img');
             imgEl.style.display = 'none';
-            // Tentativo caricamento immagine con estensione jpg
             imgEl.src = BASE_URL + "Maps/" + mapNumber + ".jpg";
             imgEl.onload = () => imgEl.style.display = 'block';
             imgEl.onerror = () => {
-                // Se fallisce, prova png
                 if(!imgEl.src.endsWith(".png")) imgEl.src = BASE_URL + "Maps/" + mapNumber + ".png";
             };
 
@@ -301,14 +300,14 @@ html_template = """
             } catch (e) { applyLevelData({}); }
 
             const hero = entities.find(e => e.tipo === 'hero');
-            hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
+            hero.x = 6; hero.y = 1; hero.movesRemaining = 6;
             entities = [hero];
             
-            let enemyNum = 2 + Math.floor(mapNumber / 2);
+            let enemyNum = 1 + Math.floor(mapNumber / 2);
             for(let i=0; i < enemyNum; i++) {
                 entities.push({
                     nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
-                    x: 4 + Math.floor(Math.random()*16), y: 15 + Math.floor(Math.random()*15), 
+                    x: 2 + Math.floor(Math.random()*8), y: 8 + Math.floor(Math.random()*7), 
                     dead: false, icon: "👹"
                 });
             }
@@ -320,6 +319,7 @@ html_template = """
         function applyLevelData(data) {
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
+            // Poiché abbiamo dimezzato la risoluzione della griglia, le mappe JSON dovrebbero riflettere COLS=12
             if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
             
             loots = {};
@@ -382,7 +382,7 @@ html_template = """
                     aggiornaPosizione(hero);
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
-                            if(Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2)) < 5) iniziaCombattimento();
+                            if(Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2)) < 3) iniziaCombattimento();
                         });
                     }
                     if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
@@ -398,6 +398,8 @@ html_template = """
                 hero.hp = Math.min(hero.maxHP, hero.hp + 15);
                 addLog("Cura effettuata (+15 HP)"); 
                 aggiornaUI();
+            } else {
+                addLog("Non hai pozioni!");
             }
         }
 
@@ -455,7 +457,6 @@ html_template = """
                 if(target.hp <= 0) { 
                     target.dead = true; target.element.style.opacity = '0.2';
                     addLog("Nemico ucciso!");
-                    // DROP LOOT
                     const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
                     const rand = Math.random();
                     if(rand < 0.2) spawnLoot(idx, 'pozione');
@@ -471,7 +472,7 @@ html_template = """
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
-            if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
+            if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.1) {
                 let d = Math.floor(Math.random()*6)+4;
                 hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
                 if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
