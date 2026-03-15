@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS per pulire l'interfaccia Streamlit e rimuovere margini/padding che schiacciano il gioco
+# CSS per pulire l'interfaccia Streamlit e ottimizzare lo spazio per PC
 st.markdown("""
     <style>
         .block-container { padding: 0rem !important; max-width: 100% !important; }
@@ -23,7 +23,6 @@ st.markdown("""
         header {visibility: hidden;}
         [data-testid="stHeader"] {display: none;}
         #MainMenu {visibility: hidden;}
-        /* Forza l'iframe a occupare tutto lo spazio disponibile */
         iframe { 
             width: 100% !important; 
             height: 98vh !important; 
@@ -32,7 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS - NOTA: NON è una f-string per evitare SyntaxError con le graffe {}
+# Template HTML/JS/CSS - NOTA: NON è una f-string per evitare conflitti con le graffe {}
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -51,104 +50,64 @@ html_template = """
         body, html { 
             background-color: var(--bg); 
             color: #eee; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             margin: 0; padding: 0;
             height: 100%; width: 100%;
             overflow: hidden;
         }
         
-        body {
-            display: flex;
-            flex-direction: column;
-        }
+        body { display: flex; flex-direction: column; }
         
-        /* Schermata di Benvenuto - Corretta per centratura PC */
         #setup-screen { 
-            position: absolute; 
-            top: 0; left: 0; 
+            position: absolute; top: 0; left: 0; 
             width: 100%; height: 100%;
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
             z-index: 5000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        #setup-screen::before { 
-            content: ""; 
-            position: absolute; inset: 0; 
-            background: rgba(0, 0, 0, 0.75); 
-            z-index: -1; 
-        }
+        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: -1; }
         
         .card { 
-            background: var(--panel); 
-            border: 2px solid var(--primary); 
-            border-radius: 15px; 
-            padding: 40px; 
-            width: 90%;
-            max-width: 500px; 
-            text-align: center; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            z-index: 5001;
+            background: var(--panel); border: 2px solid var(--primary); 
+            border-radius: 15px; padding: 30px; width: 95%; max-width: 600px; 
+            text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); z-index: 5001;
         }
         
-        .input-group { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
-        label { font-size: 14px; color: var(--primary); font-weight: bold; }
+        .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+        label { font-size: 13px; color: var(--primary); font-weight: bold; text-transform: uppercase; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
-            padding: 12px; border-radius: 8px; font-size: 16px; width: 100%;
+            padding: 10px; border-radius: 8px; font-size: 15px; width: 100%;
         }
         
         .start-btn { 
             background: var(--primary); color: black; border: none; 
             padding: 18px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 20px; cursor: pointer;
-            transition: 0.3s;
+            transition: 0.3s; margin-top: 10px;
         }
-        .start-btn:hover { background: #fff; transform: scale(1.02); }
+        .start-btn:hover { background: #fff; transform: translateY(-2px); }
 
-        /* Dashboard Superiore */
         #ui-top { 
             height: 70px; width: 100%; background: #111; 
             display: flex; justify-content: center; align-items: center;
-            border-bottom: 2px solid #333; z-index: 1000; gap: 30px;
-            flex-shrink: 0;
+            border-bottom: 2px solid #333; z-index: 1000; gap: 20px; flex-shrink: 0;
         }
-        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 10px; padding: 5px 15px; background: #222; border-radius: 10px; border: 1px solid #444; }
+        .stat-badge { font-weight: bold; font-size: 17px; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #222; border-radius: 10px; border: 1px solid #444; }
 
-        /* Layout Principale */
-        #main-layout {
-            display: flex;
-            flex: 1;
-            width: 100%;
-            height: calc(100% - 70px);
-            overflow: hidden;
-        }
+        #main-layout { display: flex; flex: 1; width: 100%; height: calc(100% - 70px); overflow: hidden; }
 
-        /* Area Gioco */
-        #game-viewport {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: #000;
-            padding: 10px;
-        }
-        
+        #game-viewport { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; background: #000; padding: 15px; }
         #game-container { 
-            position: relative; 
-            height: 95%;
-            aspect-ratio: 24 / 36;
-            background: #111;
-            box-shadow: 0 0 40px rgba(0,0,0,1);
-            border: 2px solid #333;
+            position: relative; height: 100%; aspect-ratio: 24 / 36;
+            background: #111; box-shadow: 0 0 40px rgba(0,0,0,1); border: 2px solid #333;
         }
         
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); }
-        .cell.wall { background: transparent !important; }
 
-        /* Entità */
         .char { 
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
@@ -159,64 +118,19 @@ html_template = """
         .enemy { background: #800; border-color: #f88; }
         .active-char { border-color: #fff; box-shadow: 0 0 25px #fff; z-index: 110; outline: 2px solid #fff; }
 
-        /* Pannello Info Destro */
-        #side-panel {
-            width: 320px;
-            background: #111;
-            border-left: 2px solid #333;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            gap: 20px;
-            flex-shrink: 0;
-        }
+        #side-panel { width: 340px; background: #111; border-left: 2px solid #333; display: flex; flex-direction: column; padding: 20px; gap: 15px; flex-shrink: 0; }
+        .action-card { background: #222; border: 1px solid var(--primary); border-radius: 12px; padding: 15px; text-align: center; }
+        #log-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 12px; overflow-y: auto; color: #aaa; font-family: 'Courier New', monospace; }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #1a1a1a; padding-bottom: 2px; }
 
-        .action-card {
-            background: #222;
-            border: 1px solid var(--primary);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-        }
-        
-        #log-box { 
-            flex: 1;
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 13px;
-            overflow-y: auto;
-            color: #aaa;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #222; padding-bottom: 3px; }
-
-        .pc-btn {
-            background: var(--primary);
-            color: black;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
+        .pc-btn { background: var(--primary); color: black; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; font-size: 15px; }
         .pc-btn:hover { background: #fff; }
         .pc-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        .loot-icon { position: absolute; z-index: 10; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 22px; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
         
-        kbd {
-            background: #444;
-            border-radius: 4px;
-            border: 1px solid #666;
-            color: #fff;
-            padding: 2px 6px;
-            font-size: 12px;
-        }
+        kbd { background: #444; border-radius: 4px; border: 1px solid #666; color: #fff; padding: 2px 6px; font-size: 11px; margin: 0 2px; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -224,29 +138,52 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0; font-size: 38px;">D&D ARENA</h1>
-            <p style="color:#aaa; margin-top:5px; font-weight:bold;">SAGA MAPPAT - PC EDITION</p>
-            <div class="input-group">
-                <label>Nome del tuo Eroe</label>
-                <input type="text" id="p-nome" placeholder="Es. Valerius">
-                <label>Seleziona la tua Classe</label>
-                <select id="p-classe">
-                    <option value="Guerriero">Guerriero (Spada e Scudo)</option>
-                    <option value="Mago">Mago (Incantesimi a distanza)</option>
-                    <option value="Barbaro">Barbaro (Danni pesanti)</option>
-                    <option value="Ladro">Ladro (Attacchi rapidi)</option>
-                </select>
+            <h1 style="color:var(--primary); margin:0; font-size: 40px;">D&D ARENA</h1>
+            <p style="color:#aaa; font-weight:bold; letter-spacing: 2px;">SAGA MAPPAT - PC DEFINITIVA</p>
+            
+            <div class="setup-grid">
+                <div class="input-group">
+                    <label>Nome Eroe</label>
+                    <input type="text" id="p-nome" placeholder="Eroe">
+                </div>
+                <div class="input-group">
+                    <label>Razza</label>
+                    <select id="p-razza">
+                        <option value="Umano">Umano</option><option value="Elfo">Elfo</option>
+                        <option value="Nano">Nano</option><option value="Halfling">Halfling</option>
+                        <option value="Dragonide">Dragonide</option><option value="Gnomo">Gnomo</option>
+                        <option value="Mezzelfo">Mezzelfo</option><option value="Mezzorco">Mezzorco</option>
+                        <option value="Tiefling">Tiefling</option>
+                    </select>
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Classe</label>
+                    <select id="p-classe">
+                        <option value="Barbaro">Barbaro (🪓 Ascia)</option>
+                        <option value="Guerriero">Guerriero (⚔️ Spada)</option>
+                        <option value="Paladino">Paladino (🔨 Martello)</option>
+                        <option value="Ranger">Ranger (🏹 Arco)</option>
+                        <option value="Chierico">Chierico (🏏 Mazza)</option>
+                        <option value="Ladro">Ladro (🔪 Pugnale)</option>
+                        <option value="Bardo">Bardo (🤺 Stocco)</option>
+                        <option value="Druido">Druido (🦯 Bastone)</option>
+                        <option value="Monaco">Monaco (👊 Pugni)</option>
+                        <option value="Warlock">Warlock (💜 Deflagrazione)</option>
+                        <option value="Mago">Mago (🪄 Dardo Incantato)</option>
+                        <option value="Stregone">Stregone (☄️ Dardo di Fuoco)</option>
+                    </select>
+                </div>
             </div>
             <button class="start-btn" onclick="iniziaAvventura()">COMINCIA LA SAGA ⚔️</button>
         </div>
     </div>
 
     <div id="ui-top">
-        <div class="stat-badge">❤️ HP: <span id="hp-display">0</span></div>
-        <div class="stat-badge">💰 ORO: <span id="gold-display">0</span></div>
-        <div class="stat-badge">🧪 POZIONI: <span id="potion-display">0</span></div>
-        <div class="stat-badge">👣 PASSI: <span id="moves-display">6</span></div>
-        <div style="font-size: 14px; color: var(--primary);">AREA: <span id="map-name-display">1</span></div>
+        <div class="stat-badge">❤️ <span id="hp-display">0</span> HP</div>
+        <div class="stat-badge">💰 <span id="gold-display">0</span> ORO</div>
+        <div class="stat-badge">🧪 <span id="potion-display">0</span> POZIONI</div>
+        <div class="stat-badge">👣 <span id="moves-display">6</span> PASSI</div>
+        <div style="font-size: 13px; color: var(--primary);">AREA: <span id="map-name-display">1</span></div>
     </div>
 
     <div id="main-layout">
@@ -261,21 +198,17 @@ html_template = """
 
         <div id="side-panel">
             <div class="action-card">
-                <h3 style="color:var(--primary); margin-top:0;">AZIONI</h3>
-                <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:10px;">
-                    <p style="font-size:12px; color:#888;">Avvicinati a un nemico per combattere</p>
-                </div>
-                <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+                <h3 style="color:var(--primary); margin-top:0; font-size: 16px;">AZIONI</h3>
+                <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <hr style="border:0; border-top:1px solid #444; margin:12px 0;">
                 <button class="pc-btn" id="btn-potion" onclick="usaPozione()">USA POZIONE (P)</button>
-                <button class="pc-btn" onclick="prossimoTurno()" style="background:#555; color:white;">PASSA TURNO (SPAZIO)</button>
+                <button class="pc-btn" onclick="prossimoTurno()" style="background:#444; color:white;">PASSA TURNO (SPAZIO)</button>
             </div>
 
-            <div id="log-box">
-                <div class="log-entry">> Benvenuto nell'Arena del Destino.</div>
-            </div>
+            <div id="log-box"></div>
 
-            <div style="font-size:11px; color:#666; text-align:center;">
-                Muoviti con: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+            <div style="font-size:10px; color:#555; text-align:center;">
+                Comandi: <kbd>WASD</kbd> muovi | <kbd>P</kbd> cura | <kbd>Space</kbd> passa
             </div>
         </div>
     </div>
@@ -285,13 +218,22 @@ html_template = """
         const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
-        const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Mezzorco": "👹", "Tiefling": "😈" };
-        const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Mago": 8, "Ladro": 10 };
+        const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Halfling": "👦", "Dragonide": "🐲", "Gnomo": "🧙‍♂️", "Mezzelfo": "🧝‍♂️", "Mezzorco": "👹", "Tiefling": "😈" };
+        const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Paladino": 12, "Ranger": 10, "Chierico": 10, "Ladro": 10, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
+        
         const WEAPON_CONFIG = {
-            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
-            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
             "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }],
-            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }]
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
+            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.5, icon: "🔨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }],
+            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.5, icon: "🏏" }],
+            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }],
+            "Monaco": [{ name: "Pugni", dice: 6, range: 1.5, icon: "👊" }],
+            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 10, icon: "💜" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }]
         };
 
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
@@ -308,8 +250,7 @@ html_template = """
             const entry = document.createElement('div');
             entry.className = 'log-entry';
             entry.innerText = `> ${msg}`;
-            log.appendChild(entry);
-            log.scrollTop = log.scrollHeight;
+            log.prepend(entry);
         }
 
         function iniziaAvventura() {
@@ -321,11 +262,15 @@ html_template = """
             }
             const nome = document.getElementById('p-nome').value || "Eroe";
             const classe = document.getElementById('p-classe').value;
+            const razza = document.getElementById('p-razza').value;
+            
             let hp = (HP_MAP[classe] || 10) + 20;
+            if(razza === "Nano") hp += 5;
+            
             entities = [{ 
-                nome, hp, maxHP: hp, tipo: 'hero', classe, 
+                nome, hp, maxHP: hp, tipo: 'hero', classe, razza,
                 x: 12, y: 3, movesRemaining: 6, element: null, 
-                ini: 0, dead: false, icon: "🧔",
+                ini: 0, dead: false, icon: RACE_ICONS[razza] || "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
             caricaMappaCompleta(1);
@@ -335,9 +280,17 @@ html_template = """
             currentMapNumber = mapNumber;
             document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
+            
             const imgEl = document.getElementById('map-img');
+            imgEl.style.display = 'none';
+            // Tentativo caricamento immagine con estensione jpg
             imgEl.src = BASE_URL + "Maps/" + mapNumber + ".jpg";
             imgEl.onload = () => imgEl.style.display = 'block';
+            imgEl.onerror = () => {
+                // Se fallisce, prova png
+                if(!imgEl.src.endsWith(".png")) imgEl.src = BASE_URL + "Maps/" + mapNumber + ".png";
+            };
+
             audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
             audioPlayer.play().catch(e => {});
 
@@ -350,10 +303,13 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
-            for(let i=0; i < 3; i++) {
+            
+            let enemyNum = 2 + Math.floor(mapNumber / 2);
+            for(let i=0; i < enemyNum; i++) {
                 entities.push({
-                    nome: "Mostro", hp: 12 + (mapNumber*6), tipo: 'enemy', 
-                    x: 4 + (i*7), y: 22, dead: false, icon: "👹"
+                    nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
+                    x: 4 + Math.floor(Math.random()*16), y: 15 + Math.floor(Math.random()*15), 
+                    dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
@@ -368,16 +324,18 @@ html_template = """
             
             loots = {};
             document.querySelectorAll('.loot-icon').forEach(l => l.remove());
-            if (data.loot) data.loot.forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'loot-icon';
-                el.innerText = item.type === 'moneta' ? "💰" : "🧪";
-                el.style.width = (100/COLS)+'%'; el.style.height = (100/ROWS)+'%';
-                el.style.left = ((item.idx % COLS) * (100/COLS)) + '%';
-                el.style.top = (Math.floor(item.idx / COLS) * (100/ROWS)) + '%';
-                document.getElementById('game-container').appendChild(el);
-                loots[item.idx] = { type: item.type, element: el };
-            });
+            if (data.loot) data.loot.forEach(item => spawnLoot(item.idx, item.type));
+        }
+
+        function spawnLoot(idx, type) {
+            const el = document.createElement('div');
+            el.className = 'loot-icon';
+            el.innerText = type === 'moneta' ? "💰" : "🧪";
+            el.style.width = (100/COLS)+'%'; el.style.height = (100/ROWS)+'%';
+            el.style.left = ((idx % COLS) * (100/COLS)) + '%';
+            el.style.top = (Math.floor(idx / COLS) * (100/ROWS)) + '%';
+            document.getElementById('game-container').appendChild(el);
+            loots[idx] = { type, element: el };
         }
 
         function disegnaEntita() {
@@ -404,7 +362,7 @@ html_template = """
                         addLog("Hai raccolto una pozione!");
                     } else {
                         ent.inventory.coins += 25;
-                        addLog("Hai trovato 25 monete d'oro!");
+                        addLog("Hai trovato dell'oro!");
                     }
                     loots[idx].element.remove(); delete loots[idx];
                     aggiornaUI();
@@ -438,10 +396,8 @@ html_template = """
             if (hero.inventory.potions > 0) {
                 hero.inventory.potions--; 
                 hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Hai bevuto una pozione. (+15 HP)"); 
+                addLog("Cura effettuata (+15 HP)"); 
                 aggiornaUI();
-            } else {
-                addLog("Non hai pozioni!");
             }
         }
 
@@ -458,7 +414,7 @@ html_template = """
         function iniziaCombattimento() {
             if(isCombat) return;
             isCombat = true; 
-            addLog("COMBATTIMENTO ATTIVATO!");
+            addLog("LOTTA INIZIATA!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
@@ -470,12 +426,8 @@ html_template = """
             activeEntity = entities[currentIndex % entities.length];
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
             activeEntity.element.classList.add('active-char');
-            
-            if(activeEntity.tipo === 'enemy') {
-                setTimeout(turnoIA, 600);
-            } else {
-                renderAzioni();
-            }
+            if(activeEntity.tipo === 'enemy') setTimeout(turnoIA, 600);
+            else renderAzioni();
             aggiornaUI();
         }
 
@@ -486,7 +438,7 @@ html_template = """
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
                 b.className = 'pc-btn';
-                b.innerHTML = w.icon + " ATTACCA CON " + w.name;
+                b.innerHTML = w.icon + " ATTACCA (" + w.name + ")";
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
             });
@@ -501,12 +453,16 @@ html_template = """
                 target.hp -= d;
                 addLog("Colpisci per " + d + " danni!");
                 if(target.hp <= 0) { 
-                    target.dead = true; 
-                    target.element.style.opacity = '0.2';
-                    addLog("Nemico sconfitto!");
+                    target.dead = true; target.element.style.opacity = '0.2';
+                    addLog("Nemico ucciso!");
+                    // DROP LOOT
+                    const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
+                    const rand = Math.random();
+                    if(rand < 0.2) spawnLoot(idx, 'pozione');
+                    else if(rand < 0.8) spawnLoot(idx, 'moneta');
                 }
                 prossimoTurno();
-            } else addLog("Il nemico è fuori portata!");
+            } else addLog("Nemico troppo lontano!");
         }
 
         function turnoIA() {
@@ -516,9 +472,9 @@ html_template = """
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
             if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
-                let d = Math.floor(Math.random()*5)+4;
-                hero.hp -= d; addLog("Il mostro ti colpisce: -" + d + " HP");
-                if(hero.hp <= 0) { alert("L'eroe è caduto in battaglia."); location.reload(); }
+                let d = Math.floor(Math.random()*6)+4;
+                hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
+                if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
             }
             setTimeout(prossimoTurno, 600);
         }
@@ -527,7 +483,7 @@ html_template = """
             if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) {
                 isCombat = false; 
                 entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
-                addLog("Vittoria! Il cammino è libero."); 
+                addLog("Vittoria! Area ripulita."); 
                 aggiornaUI();
                 return;
             }
@@ -548,7 +504,6 @@ html_template = """
 </html>
 """
 
-# Rendering finale con height ricalcolato per PC
+# Rendering finale
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
-b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
 components.html(game_html, height=1000, scrolling=False)
