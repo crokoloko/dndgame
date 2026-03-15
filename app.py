@@ -21,7 +21,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS (Stringa standard, non f-string per evitare errori con le graffe {})
+# Template HTML/JS/CSS
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -48,8 +48,9 @@ html_template = """
         
         button { background: var(--primary); color: black; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { transform: scale(1.05); background: #d4ac0d; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; }
 
-        #ui-top { width: 100%; background: #111; padding: 10px; display: flex; justify-content: space-around; border-bottom: 2px solid #333; z-index: 100; }
+        #ui-top { width: 100%; background: #111; padding: 10px; display: flex; justify-content: space-around; border-bottom: 2px solid #333; z-index: 100; flex-wrap: wrap; gap: 10px; }
         .stat-badge { background: #222; padding: 5px 12px; border-radius: 20px; border: 1px solid #444; font-size: 13px; display: flex; align-items: center; gap: 8px; }
 
         #game-container { position: relative; width: 720px; height: 1080px; margin-top: 5px; border: 2px solid #333; overflow: hidden; background: #000; }
@@ -68,9 +69,12 @@ html_template = """
         
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        #action-panel { position: fixed; bottom: 210px; background: var(--panel); border: 2px solid var(--primary); padding: 15px; border-radius: 12px; display: none; flex-direction: column; gap: 8px; z-index: 500; min-width: 220px; }
+        #action-panel { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 2px solid var(--primary); padding: 12px; border-radius: 12px; display: none; flex-direction: column; gap: 8px; z-index: 500; min-width: 250px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
         .log-container { position: fixed; bottom: 20px; right: 20px; width: 300px; height: 160px; background: var(--panel); border: 1px solid #444; padding: 12px; font-size: 12px; overflow-y: auto; border-radius: 8px; color: #ccc; }
         .log-entry { border-left: 3px solid var(--primary); padding-left: 8px; margin-bottom: 4px; }
+        
+        .loot-icon { position: absolute; z-index: 10; font-size: 20px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -103,8 +107,10 @@ html_template = """
     <div id="ui-top">
         <div class="stat-badge">Mappa: <span id="map-name-display">1</span></div>
         <div class="stat-badge">❤️ HP: <span id="hp-display" style="color:var(--danger)">0</span></div>
+        <div class="stat-badge">💰 Oro: <span id="gold-display" style="color:gold">0</span></div>
+        <div class="stat-badge">🧪 Pozioni: <span id="potion-display" style="color:var(--success)">0</span></div>
+        <button id="btn-use-potion" onclick="usaPozione()" style="padding: 5px 10px; font-size: 11px; background: #2ecc71; color: white;">BEVI 🧪</button>
         <div class="stat-badge">👣 Passi: <span id="moves-display">6</span>/6</div>
-        <div class="stat-badge">⚔️ Stato: <span id="turn-display">Esplorazione</span></div>
     </div>
 
     <div id="game-container">
@@ -147,7 +153,7 @@ html_template = """
             "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }, { name: "Scossa Elettrica", dice: 8, range: 1.5, icon: "⚡" }]
         };
 
-        let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null;
+        let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
 
         function playIntroOnce() {
             if (audioPlayer.paused) {
@@ -181,7 +187,8 @@ html_template = """
                 nome, hp, maxHP: hp, tipo: 'hero', razza, classe, 
                 x: 12, y: 2, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza],
-                weapons: WEAPON_CONFIG[classe] || []
+                weapons: WEAPON_CONFIG[classe] || [],
+                inventory: { potions: 0, coins: 0 }
             }];
 
             caricaMappaCompleta(1);
@@ -239,6 +246,25 @@ html_template = """
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
             if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
+
+            loots = {};
+            document.querySelectorAll('.loot-icon').forEach(l => l.remove());
+            if (data.loot && Array.isArray(data.loot)) {
+                data.loot.forEach(item => {
+                    spawnLoot(parseInt(item.idx), item.type);
+                });
+            }
+        }
+
+        function spawnLoot(idx, type) {
+            const el = document.createElement('div');
+            el.className = 'loot-icon';
+            el.innerText = type === 'moneta' ? "💰" : "🧪";
+            el.style.width = CELL_W + 'px'; el.style.height = CELL_H + 'px';
+            el.style.left = (idx % COLS) * CELL_W + 'px';
+            el.style.top = Math.floor(idx / COLS) * CELL_H + 'px';
+            document.getElementById('game-container').appendChild(el);
+            loots[idx] = { type, element: el };
         }
 
         function disegnaEntita() {
@@ -257,6 +283,37 @@ html_template = """
         function aggiornaPosizione(ent) {
             if(!ent.element) return;
             ent.element.style.transform = `translate(${ent.x * CELL_W}px, ${ent.y * CELL_H}px)`;
+            
+            if (ent.tipo === 'hero') {
+                const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
+                if (loots[idx]) {
+                    const item = loots[idx];
+                    if (item.type === 'pozione') {
+                        ent.inventory.potions++;
+                        addLog("Hai trovato una pozione! Salvata nello zaino.");
+                    } else {
+                        ent.inventory.coins += 15;
+                        addLog("Hai raccolto 15 monete d'oro!");
+                    }
+                    item.element.remove();
+                    delete loots[idx];
+                    aggiornaUI();
+                }
+            }
+        }
+
+        function usaPozione() {
+            const hero = entities.find(e => e.tipo === 'hero');
+            if (hero.inventory.potions > 0 && hero.hp < hero.maxHP) {
+                hero.inventory.potions--;
+                hero.hp = Math.min(hero.maxHP, hero.hp + 12);
+                addLog("Bevi la pozione... ti senti rinvigorito! (+12 HP)");
+                aggiornaUI();
+            } else if (hero.hp >= hero.maxHP) {
+                addLog("La tua vita è già al massimo!");
+            } else {
+                addLog("Non hai pozioni nello zaino!");
+            }
         }
 
         function aggiornaUI() {
@@ -264,7 +321,10 @@ html_template = """
             if(!hero) return;
             document.getElementById('hp-display').innerText = hero.hp;
             document.getElementById('moves-display').innerText = hero.movesRemaining;
-            document.getElementById('turn-display').innerText = isCombat ? "Combattimento" : "Esplorazione";
+            document.getElementById('gold-display').innerText = hero.inventory.coins;
+            document.getElementById('potion-display').innerText = hero.inventory.potions;
+            document.getElementById('btn-use-potion').disabled = hero.inventory.potions <= 0;
+            document.getElementById('turn-display').innerText = isCombat ? "Lotta" : "Esplorazione";
         }
 
         function iniziaCombattimento() {
@@ -281,7 +341,6 @@ html_template = """
             if (!isCombat) return;
             entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
             activeEntity = entities[currentIndex % entities.length];
-            
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
             
             activeEntity.element.classList.add('active-char');
@@ -317,19 +376,22 @@ html_template = """
 
             let dist = Math.sqrt(Math.pow(hero.x - target.x, 2) + Math.pow(hero.y - target.y, 2));
             if(dist <= weapon.range) {
-                let dmg = Math.floor(Math.random() * weapon.dice) + 3;
+                let dmg = Math.floor(Math.random() * weapon.dice) + 4;
                 target.hp -= dmg;
                 addLog(`Usi ${weapon.name}: ${dmg} danni!`);
                 if(target.hp <= 0) {
                     target.dead = true;
-                    target.element.style.opacity = "0.2";
-                    addLog(target.nome + " sconfitto!");
+                    target.element.style.opacity = "0.1";
+                    addLog(target.nome + " è morto e ha lasciato cadere dell'oro!");
+                    // DROP LOOT DAL NEMICO MORTO
+                    const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
+                    spawnLoot(idx, 'moneta');
                     controllaFineCombattimento();
                 }
                 document.getElementById('action-panel').style.display = 'none';
                 if(isCombat) prossimoTurno();
             } else {
-                addLog(`Bersaglio fuori portata!`);
+                addLog(`Bersaglio troppo lontano!`);
             }
         }
 
@@ -340,7 +402,7 @@ html_template = """
                 activeEntity = null;
                 document.getElementById('action-panel').style.display = 'none';
                 entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
-                addLog("Vittoria! Area sicura.");
+                addLog("Vittoria! Area ripulita.");
                 const hero = entities.find(e => e.tipo === 'hero');
                 hero.movesRemaining = 6;
                 aggiornaUI();
@@ -350,16 +412,14 @@ html_template = """
         function turnoIA() {
             if(!isCombat || !activeEntity || activeEntity.dead) return prossimoTurno();
             const hero = entities.find(e => e.tipo === 'hero');
-            
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
-            
             let d = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
             if(d < 1.6) {
                 let dmg = Math.floor(Math.random()*6)+2;
                 hero.hp -= dmg;
-                addLog("Il mostro colpisce! -" + dmg + " HP");
+                addLog("Il mostro ti morde! -" + dmg + " HP");
                 if(hero.hp <= 0) { alert("Saga Fallita."); location.reload(); }
             }
             setTimeout(prossimoTurno, 500);
@@ -376,6 +436,8 @@ html_template = """
             if (!hero || hero.dead) return;
             if (isCombat && activeEntity !== hero) return;
             
+            if (e.key.toLowerCase() === 'p') { usaPozione(); return; }
+
             let nx = hero.x, ny = hero.y;
             if (['w', 'ArrowUp'].includes(e.key)) ny--;
             if (['s', 'ArrowDown'].includes(e.key)) ny++;
@@ -388,13 +450,11 @@ html_template = """
                     hero.x = nx; hero.y = ny;
                     if(isCombat) hero.movesRemaining--;
                     aggiornaPosizione(hero);
-                    
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
                             if(Math.sqrt(Math.pow(en.x-hero.x, 2) + Math.pow(en.y-hero.y, 2)) < 6) iniziaCombattimento();
                         });
                     }
-                    
                     if (hero.y >= ROWS - 1) {
                         addLog("Passaggio all'area successiva...");
                         caricaMappaCompleta(currentMapNumber + 1);
@@ -408,7 +468,7 @@ html_template = """
 </html>
 """
 
-# Renderizzazione finale (Fix Linea 417)
+# Sostituzione base URL e renderizzazione finale
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
 components.html(f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1180px" allow="autoplay"></iframe>', height=1180)
