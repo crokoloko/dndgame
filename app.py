@@ -422,6 +422,12 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             if (hero.inventory.potions > 0) {
                 hero.inventory.potions--; 
+                hero.hp = Math.min(hero.maxHP, hero.hp + 15);
+                addLog("Cura effettuata (+15 HP)"); 
+                aggiornaUI();
+            }
+        }
+
         function aggiornaUI() {
             const hero = entities.find(e => e.tipo === 'hero');
             if(!hero) return;
@@ -560,10 +566,4 @@ html_template = """
 
 # Rendering finale
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
-components.html(game_html, height=1000, scrolling=False)             hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Cura effettuata (+15 HP)"); 
-                aggiornaUI();
-            }
-        }
-
-   
+components.html(game_html, height=1000, scrolling=False)
