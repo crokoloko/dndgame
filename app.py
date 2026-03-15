@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS per eliminare ogni bordo di Streamlit e rendere l'app a tutto schermo
+# CSS per eliminare ogni bordo di Streamlit e forzare il layout verticale
 st.markdown("""
     <style>
         .block-container { padding: 0rem; max-width: 100%; }
@@ -22,19 +22,19 @@ st.markdown("""
         footer {visibility: hidden;}
         header {visibility: hidden;}
         iframe { border: none; width: 100vw; height: 100vh; display: block; }
-        #MainMenu {visibility: hidden;}
         [data-testid="stHeader"] {display: none;}
+        #MainMenu {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Ottimizzato per Mobile (UX migliorata)
+# Template HTML/JS/CSS Ottimizzato per Mobile Verticale
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D&D Arena Mobile</title>
+    <title>D&D Arena Mobile Vertical</title>
     <style>
         :root {
             --primary: #f1c40f; 
@@ -52,13 +52,10 @@ html_template = """
         body { 
             background-color: var(--bg); 
             color: #eee; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0; 
-            padding: 0;
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            width: 100vw;
+            font-family: -apple-system, sans-serif;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; 
+            height: 100vh; width: 100vw;
             overflow: hidden;
         }
         
@@ -69,20 +66,15 @@ html_template = """
             z-index: 3000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: -1; }
+        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: -1; }
         
         .card { 
-            background: rgba(30, 30, 30, 0.95); 
-            border: 1px solid var(--primary); 
-            border-radius: 15px; 
-            padding: 20px; 
-            width: 90%; 
-            max-width: 350px; 
-            text-align: center; 
+            background: rgba(30, 30, 30, 0.98); border: 2px solid var(--primary); 
+            border-radius: 15px; padding: 25px; width: 85%; max-width: 350px; text-align: center; 
         }
         
         .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-        label { font-size: 12px; color: var(--primary); font-weight: bold; text-transform: uppercase; }
+        label { font-size: 11px; color: var(--primary); font-weight: bold; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
             padding: 12px; border-radius: 8px; font-size: 16px; width: 100%;
@@ -90,38 +82,40 @@ html_template = """
         
         .start-btn { 
             background: var(--primary); color: black; border: none; 
-            padding: 16px; border-radius: 10px; font-weight: bold; 
-            width: 100%; font-size: 18px; margin-top: 10px;
+            padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 18px; 
         }
 
         /* UI Superiore */
         #ui-top { 
-            height: 50px; width: 100%; background: #111; 
+            height: 60px; width: 100%; background: #111; 
             display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 1px solid #333; z-index: 100; padding: 0 10px;
+            border-bottom: 2px solid #333; z-index: 100;
         }
-        .stat-badge { font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .stat-badge { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 3px; }
 
-        /* Contenitore Gioco */
+        /* Contenitore Gioco Centrale */
         #game-viewport {
             flex: 1;
+            width: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #050505;
+            overflow: hidden;
             position: relative;
+            background: #050505;
         }
 
         #game-container { 
             position: relative; 
-            width: 98vw; 
-            height: calc(98vw * (1.5)); /* Rapporto 1080/720 */
-            max-height: 55vh;
-            border: 1px solid #333;
+            width: 100vw; 
+            height: calc(100vw * 1.5); /* Rapporto 24:36 = 1:1.5 */
+            max-height: 100%;
             background: #000;
+            box-shadow: 0 0 20px rgba(0,0,0,1);
         }
+        
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
-        .map-asset { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
 
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.03); }
@@ -131,69 +125,72 @@ html_template = """
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.15s linear; font-size: 12px; 
+            transition: transform 0.1s linear; font-size: 14px; 
         }
-        .hero { box-shadow: 0 0 10px var(--primary); border: 2px solid var(--primary); z-index: 60; }
-        .enemy { background: #500; border-color: #f55; }
-        .active-char { filter: brightness(1.5); outline: 2px solid #fff; }
+        .hero { box-shadow: 0 0 12px var(--primary); border: 2px solid var(--primary); z-index: 60; }
+        .enemy { background: #600; border-color: #f66; }
+        .active-char { box-shadow: 0 0 15px #fff; z-index: 70; }
 
-        /* Controlli Mobile Estesi */
-        #controls-layer {
-            height: 180px;
+        /* Controlli Inferiori */
+        #controls-area {
+            height: 220px;
             width: 100%;
             background: #111;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            border-top: 1px solid #333;
+            padding: 10px 15px;
+            border-top: 2px solid #333;
+            z-index: 200;
         }
 
         .d-pad {
             display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(3, 50px);
-            gap: 5px;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
         }
         .ctrl-btn {
-            background: var(--ctrl-bg);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 12px;
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 20px;
-            width: 50px; height: 50px;
+            color: white; font-size: 24px;
+            width: 60px; height: 60px;
         }
-        .ctrl-btn:active { background: var(--primary); color: black; }
+        .ctrl-btn:active { background: var(--primary); color: black; border-color: white; }
 
-        .action-group {
+        .side-actions {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
-        .action-btn {
-            padding: 15px 25px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 14px;
+        .action-circle {
+            width: 75px; height: 75px;
+            border-radius: 50%;
             border: none;
-            min-width: 100px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
         #action-panel { 
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
-            background: var(--panel); border: 1px solid var(--primary); 
-            padding: 10px; border-radius: 10px; display: none; 
-            flex-direction: column; gap: 8px; z-index: 1000; width: 70%;
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); 
+            background: var(--panel); border: 2px solid var(--primary); 
+            padding: 12px; border-radius: 12px; display: none; 
+            flex-direction: column; gap: 8px; z-index: 1000; width: 85%;
         }
         
-        .log-container { 
-            position: absolute; top: 60px; right: 10px; 
-            width: 120px; height: 80px; 
-            background: rgba(0,0,0,0.6); padding: 5px; 
-            font-size: 9px; overflow-y: auto; border-radius: 5px; 
-            color: #ccc; pointer-events: none; z-index: 80;
+        .log-box { 
+            position: absolute; top: 10px; right: 10px; 
+            width: 130px; height: 90px; 
+            background: rgba(0,0,0,0.7); padding: 8px; 
+            font-size: 10px; overflow-y: auto; border-radius: 8px; 
+            color: #ccc; pointer-events: none; z-index: 80; border: 1px solid #444;
         }
-        .loot-icon { position: absolute; z-index: 10; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 20px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -201,20 +198,17 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0;">ARENA D&D</h1>
-            <p style="font-size:10px; color:#aaa; margin-bottom:15px;">SAGA MAPPAT - MOBILE V2</p>
+            <h1 style="color:var(--primary); margin:0; font-size: 28px;">D&D ARENA</h1>
+            <p style="font-size:11px; color:#aaa; margin-bottom:20px;">SAGA MAPPAT - VERTICAL MODE</p>
             <div class="input-group">
                 <label>Nome Personaggio</label>
                 <input type="text" id="p-nome" placeholder="Eroe">
-                <label>Razza</label>
-                <select id="p-razza">
-                    <option value="Umano">Umano</option><option value="Elfo">Elfo</option>
-                    <option value="Nano">Nano</option><option value="Tiefling">Tiefling</option>
-                </select>
                 <label>Classe</label>
                 <select id="p-classe">
-                    <option value="Guerriero">Guerriero</option><option value="Mago">Mago</option>
-                    <option value="Barbaro">Barbaro</option><option value="Ladro">Ladro</option>
+                    <option value="Guerriero">Guerriero</option>
+                    <option value="Mago">Mago</option>
+                    <option value="Barbaro">Barbaro</option>
+                    <option value="Ladro">Ladro</option>
                 </select>
             </div>
             <button class="start-btn" onclick="iniziaAvventura()">ENTRA ⚔️</button>
@@ -226,7 +220,6 @@ html_template = """
         <div class="stat-badge">💰 <span id="gold-display">0</span></div>
         <div class="stat-badge">🧪 <span id="potion-display">0</span></div>
         <div class="stat-badge">👣 <span id="moves-display">6</span></div>
-        <div style="font-size:10px; color:var(--primary)">MAP <span id="map-name-display">1</span></div>
     </div>
 
     <div id="game-viewport">
@@ -238,14 +231,14 @@ html_template = """
         </div>
         
         <div id="action-panel">
-            <div style="font-size:10px; color:var(--primary); text-align:center; margin-bottom:5px;">COMBATTIMENTO</div>
-            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:5px;"></div>
+            <div style="font-size:11px; color:var(--primary); text-align:center; font-weight:bold;">Tuo Turno</div>
+            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
         
-        <div class="log-container" id="game-log"></div>
+        <div class="log-box" id="game-log"></div>
     </div>
 
-    <div id="controls-layer">
+    <div id="controls-area">
         <div class="d-pad">
             <div></div><button class="ctrl-btn" onclick="muoviEroeBtn(0, -1)">▲</button><div></div>
             <button class="ctrl-btn" onclick="muoviEroeBtn(-1, 0)">◀</button>
@@ -253,9 +246,9 @@ html_template = """
             <button class="ctrl-btn" onclick="muoviEroeBtn(1, 0)">▶</button>
         </div>
         
-        <div class="action-group">
-            <button class="action-btn" id="btn-potion" onclick="usaPozione()" style="background:var(--success); color:white;">BEVI 🧪</button>
-            <button class="action-btn" onclick="prossimoTurno()" style="background:#444; color:white;">PASSA ⏭️</button>
+        <div class="side-actions">
+            <button class="action-circle" id="btn-potion" onclick="usaPozione()" style="background:var(--success); color:white;">USA 🧪</button>
+            <button class="action-circle" onclick="prossimoTurno()" style="background:#444; color:white; font-size: 11px;">PASSA<br>TURNO</button>
         </div>
     </div>
 
@@ -296,13 +289,12 @@ html_template = """
                 const c = document.createElement("div"); c.className = "cell"; grid.appendChild(c);
             }
             const nome = document.getElementById('p-nome').value || "Eroe";
-            const razza = document.getElementById('p-razza').value;
             const classe = document.getElementById('p-classe').value;
             let hp = (HP_MAP[classe] || 10) + 20;
             entities = [{ 
-                nome, hp, maxHP: hp, tipo: 'hero', razza, classe, 
+                nome, hp, maxHP: hp, tipo: 'hero', classe, 
                 x: 12, y: 2, movesRemaining: 6, element: null, 
-                ini: 0, dead: false, icon: RACE_ICONS[razza],
+                ini: 0, dead: false, icon: "👤",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
             caricaMappaCompleta(1);
@@ -310,7 +302,6 @@ html_template = """
 
         async function caricaMappaCompleta(mapNumber) {
             currentMapNumber = mapNumber;
-            document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
             document.getElementById('action-panel').style.display = 'none';
             const imgEl = document.getElementById('map-img');
@@ -330,7 +321,7 @@ html_template = """
             for(let i=0; i < 2; i++) {
                 entities.push({
                     nome: "Mob", hp: 10 + (mapNumber*5), tipo: 'enemy', 
-                    x: 5 + (i*10), y: 25, dead: false, icon: "👹"
+                    x: 5 + (i*10), y: 20, dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
@@ -407,7 +398,7 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             if (hero.inventory.potions > 0) {
                 hero.inventory.potions--; hero.hp = Math.min(hero.maxHP, hero.hp + 15);
-                addLog("Cura +15"); aggiornaUI();
+                addLog("Salute +15"); aggiornaUI();
             }
         }
 
@@ -449,7 +440,8 @@ html_template = """
             container.innerHTML = '';
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
-                b.className = 'action-btn'; b.style.background = '#f1c40f'; b.style.color = 'black';
+                b.style.padding = '12px'; b.style.borderRadius = '8px'; b.style.border = 'none';
+                b.style.background = '#f1c40f'; b.style.fontWeight = 'bold';
                 b.innerHTML = `${w.icon} ATTACCA`;
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
@@ -465,7 +457,7 @@ html_template = """
                 addLog(`Danni: ${d}`);
                 if(target.hp <= 0) { target.dead = true; target.element.style.opacity = '0.2'; }
                 prossimoTurno();
-            } else addLog("Lontano!");
+            } else addLog("Fuori tiro!");
         }
 
         function turnoIA() {
@@ -476,7 +468,7 @@ html_template = """
             aggiornaPosizione(activeEntity);
             if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
                 hero.hp -= 5; addLog("Colpito! -5");
-                if(hero.hp <= 0) { alert("SCONFITTA"); location.reload(); }
+                if(hero.hp <= 0) { alert("SCONFITTA!"); location.reload(); }
             }
             setTimeout(prossimoTurno, 500);
         }
@@ -493,7 +485,7 @@ html_template = """
 </html>
 """
 
-# Rendering con altezza 100vh per coprire tutto lo schermo mobile
+# Rendering con altezza 1000 per garantire lo spazio verticale completo dell'iframe
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=800)
+components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1000)
