@@ -1,46 +1,105 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import base64
 
-# Configurazione della pagina per rimuovere spazi bianchi
+# Configurazione della pagina Streamlit
 st.set_page_config(
     page_title="D&D Arena del Destino",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Rimuoviamo il padding di Streamlit che potrebbe spostare il gioco
+# Rimuoviamo i margini superflui di Streamlit tramite CSS
 st.markdown("""
     <style>
-        .block-container { padding: 0rem; }
-        iframe { display: block; margin: auto; }
-        body { background-color: #050505; }
+        #root > div:nth-child(1) > div > div > div > div > section > div {
+            padding: 0;
+            margin: 0;
+        }
+        .stApp {
+            background-color: #050505;
+        }
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# Il tuo codice HTML (Inserito tra r''' ... ''')
-# Usiamo r''' per evitare problemi con i caratteri speciali \ e gli apici
-game_html = r'''
+# Inseriamo qui il tuo codice HTML completo
+# Ho aggiunto un piccolo controllo CSS iniziale per assicurarmi che il corpo sia visibile
+game_html = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <style>
-        /* Forza lo sfondo nero per evitare il flash bianco */
-        html, body { background: #050505 !important; margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-    </style>
-''' + """
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Arena del Destino - Saga Mappat</title>
     <style>
         :root {
             --primary: #f1c40f;
-            /* ... tutto il tuo CSS ... */
+            --secondary: #2c3e50;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --info: #3498db;
+            --bg: #050505;
+            --panel: rgba(20, 20, 20, 0.95);
+        }
+
+        body {
+            background-color: var(--bg) !important;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #setup-screen {
+            position: fixed;
+            inset: 0;
+            background: #111; /* Fallback se l'immagine manca */
+            background-image: url('https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1920&auto=format&fit=crop'); 
+            background-size: cover;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        /* ... resto del tuo CSS originale ... */
     </style>
-    <body>
-        <script>
-            /* ... tutto il tuo JavaScript ... */
-        </script>
-    </body>
+    <!-- NOTA: Per brevità ho accorciato il CSS, ma nel tuo file incolla tutto il CSS e JS originale -->
+</head>
+<body onclick="playIntroOnce()">
+    <!-- INCOLLA QUI TUTTO IL CORPO (BODY) DEL TUO HTML ORIGINALE -->
+    <div id="setup-screen">
+        <div class="card" style="background: rgba(0,0,0,0.8); border: 2px solid gold; padding: 2rem; border-radius: 15px; text-align: center;">
+            <h1 style="color: gold;">Arena del Destino</h1>
+            <p>Caricamento Saga Mappat...</p>
+            <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                <label>Nome Eroe</label>
+                <input type="text" id="p-nome" style="padding: 10px; background: #222; color: white; border: 1px solid #444;" placeholder="Es. Bruenor...">
+            </div>
+            <button onclick="alert('Gioco in fase di inizializzazione...')" style="padding: 15px 30px; background: gold; border: none; font-weight: bold; cursor: pointer;">ENTRA NEL DUNGEON</button>
+        </div>
+    </div>
+    
+    <script>
+        // Incolla qui tutto il tuo JavaScript originale
+        console.log("Gioco caricato correttamente!");
+    </script>
+</body>
 </html>
 """
 
-# Visualizzazione con altezza fissa per accomodare il tuo canvas 1080px + UI
-components.html(game_html, height=1200, scrolling=True)
+# Funzione per codificare l'HTML e bypassare i blocchi del browser
+def get_game_display(html_content):
+    b64_html = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
+    return f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1100px" style="border:none; overflow:hidden;" allow="autoplay"></iframe>'
+
+# Visualizzazione del gioco tramite l'iframe codificato
+st.components.v1.html(get_game_display(game_html), height=1100)
