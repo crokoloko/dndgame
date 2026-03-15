@@ -14,34 +14,33 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS per eliminare ogni bordo di Streamlit e forzare il layout verticale
+# CSS per forzare Streamlit a sparire e lasciare spazio al gioco
 st.markdown("""
     <style>
         .block-container { padding: 0rem; max-width: 100%; }
         .stApp { background-color: #000; }
         footer {visibility: hidden;}
         header {visibility: hidden;}
-        iframe { border: none; width: 100vw; height: 100vh; display: block; }
+        iframe { border: none; width: 100vw; height: 100dvh; display: block; }
         [data-testid="stHeader"] {display: none;}
         #MainMenu {visibility: hidden;}
+        div[data-testid="stVerticalBlock"] > div:has(iframe) { padding: 0; }
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Ottimizzato per Mobile Verticale
+# Template HTML/JS/CSS Mobile Pro
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D&D Arena Mobile Vertical</title>
+    <title>D&D Arena Mobile Final</title>
     <style>
         :root {
             --primary: #f1c40f; 
-            --danger: #e74c3c;
-            --success: #2ecc71; 
             --bg: #000;
-            --ctrl-bg: rgba(255, 255, 255, 0.1);
+            --panel: rgba(30, 30, 30, 0.95);
         }
         * { 
             touch-action: none; 
@@ -52,48 +51,44 @@ html_template = """
         body { 
             background-color: var(--bg); 
             color: #eee; 
-            font-family: -apple-system, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             margin: 0; padding: 0;
             display: flex; flex-direction: column; 
-            height: 100vh; width: 100vw;
+            height: 100dvh; width: 100vw;
             overflow: hidden;
         }
         
-        /* Schermata Iniziale */
+        /* Setup Screen */
         #setup-screen { 
             position: fixed; inset: 0; 
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
             z-index: 3000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: -1; }
-        
+        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: -1; }
         .card { 
-            background: rgba(30, 30, 30, 0.98); border: 2px solid var(--primary); 
-            border-radius: 15px; padding: 25px; width: 85%; max-width: 350px; text-align: center; 
+            background: var(--panel); border: 2px solid var(--primary); 
+            border-radius: 15px; padding: 20px; width: 85%; max-width: 320px; text-align: center; 
         }
-        
-        .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-        label { font-size: 11px; color: var(--primary); font-weight: bold; }
+        .input-group { margin: 10px 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
-            padding: 12px; border-radius: 8px; font-size: 16px; width: 100%;
+            padding: 10px; border-radius: 8px; font-size: 16px; width: 100%;
         }
-        
         .start-btn { 
             background: var(--primary); color: black; border: none; 
-            padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 18px; 
+            padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 18px; margin-top: 10px;
         }
 
-        /* UI Superiore */
+        /* Top Header */
         #ui-top { 
-            height: 60px; width: 100%; background: #111; 
+            height: 45px; width: 100%; background: #111; 
             display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 2px solid #333; z-index: 100;
+            border-bottom: 1px solid #333; font-size: 12px;
         }
-        .stat-badge { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 3px; }
+        .stat-badge { font-weight: bold; display: flex; align-items: center; gap: 4px; }
 
-        /* Contenitore Gioco Centrale */
+        /* Area Gioco Centrale */
         #game-viewport {
             flex: 1;
             width: 100vw;
@@ -102,95 +97,72 @@ html_template = """
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background: #050505;
         }
-
         #game-container { 
             position: relative; 
-            width: 100vw; 
-            height: calc(100vw * 1.5); /* Rapporto 24:36 = 1:1.5 */
-            max-height: 100%;
-            background: #000;
-            box-shadow: 0 0 20px rgba(0,0,0,1);
+            aspect-ratio: 24 / 36;
+            height: 98%;
+            max-width: 98%;
+            background: #111;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
-
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
-        .cell { border: 1px solid rgba(255,255,255,0.03); }
+        .cell { border: 1px solid rgba(255,255,255,0.02); }
         .cell.wall { background: transparent !important; } 
 
+        /* Personaggi */
         .char { 
             position: absolute; width: 4.16%; height: 2.77%; 
             border-radius: 50%; border: 1px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.1s linear; font-size: 14px; 
+            transition: transform 0.1s linear; font-size: 10px; 
         }
-        .hero { box-shadow: 0 0 12px var(--primary); border: 2px solid var(--primary); z-index: 60; }
-        .enemy { background: #600; border-color: #f66; }
-        .active-char { box-shadow: 0 0 15px #fff; z-index: 70; }
+        .hero { box-shadow: 0 0 8px var(--primary); border: 2px solid var(--primary); z-index: 60; }
+        .enemy { background: #700; border-color: #f77; }
+        .active-char { border-color: #fff; box-shadow: 0 0 10px #fff; }
 
         /* Controlli Inferiori */
         #controls-area {
-            height: 220px;
-            width: 100%;
+            height: 180px; width: 100%;
             background: #111;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            border-top: 2px solid #333;
-            z-index: 200;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; border-top: 1px solid #333;
         }
-
         .d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 8px;
+            display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px);
+            gap: 5px;
         }
         .ctrl-btn {
-            background: #222;
-            border: 2px solid #444;
-            border-radius: 15px;
+            background: #252525; border: 1px solid #444; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 24px;
-            width: 60px; height: 60px;
+            color: white; font-size: 20px; width: 55px; height: 55px;
         }
-        .ctrl-btn:active { background: var(--primary); color: black; border-color: white; }
+        .ctrl-btn:active { background: var(--primary); color: black; }
 
-        .side-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .side-actions { display: flex; flex-direction: column; gap: 10px; }
+        .action-btn {
+            width: 80px; height: 65px; border-radius: 12px; border: none;
+            font-weight: bold; font-size: 11px; color: white;
+            box-shadow: 0 4px 0 #222;
         }
-        .action-circle {
-            width: 75px; height: 75px;
-            border-radius: 50%;
-            border: none;
-            font-weight: bold;
-            font-size: 13px;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
+        .action-btn:active { transform: translateY(2px); box-shadow: none; }
 
+        /* Pannello Combattimento */
         #action-panel { 
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); 
-            background: var(--panel); border: 2px solid var(--primary); 
-            padding: 12px; border-radius: 12px; display: none; 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            background: var(--panel); border: 1px solid var(--primary); 
+            padding: 10px; border-radius: 12px; display: none; 
             flex-direction: column; gap: 8px; z-index: 1000; width: 85%;
         }
         
         .log-box { 
-            position: absolute; top: 10px; right: 10px; 
-            width: 130px; height: 90px; 
-            background: rgba(0,0,0,0.7); padding: 8px; 
-            font-size: 10px; overflow-y: auto; border-radius: 8px; 
-            color: #ccc; pointer-events: none; z-index: 80; border: 1px solid #444;
+            position: absolute; top: 10px; right: 10px; width: 110px; height: 70px; 
+            background: rgba(0,0,0,0.6); padding: 5px; font-size: 8px; 
+            overflow: hidden; border-radius: 5px; color: #ccc; pointer-events: none; z-index: 80;
         }
-        .loot-icon { position: absolute; z-index: 10; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 16px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -198,11 +170,10 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0; font-size: 28px;">D&D ARENA</h1>
-            <p style="font-size:11px; color:#aaa; margin-bottom:20px;">SAGA MAPPAT - VERTICAL MODE</p>
+            <h1 style="color:var(--primary); margin:0; font-size: 22px;">D&D ARENA</h1>
             <div class="input-group">
-                <label>Nome Personaggio</label>
-                <input type="text" id="p-nome" placeholder="Eroe">
+                <label>Nome Eroe</label>
+                <input type="text" id="p-nome" placeholder="Guerriero">
                 <label>Classe</label>
                 <select id="p-classe">
                     <option value="Guerriero">Guerriero</option>
@@ -231,8 +202,8 @@ html_template = """
         </div>
         
         <div id="action-panel">
-            <div style="font-size:11px; color:var(--primary); text-align:center; font-weight:bold;">Tuo Turno</div>
-            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:8px;"></div>
+            <div style="font-size:10px; color:var(--primary); text-align:center; font-weight:bold;">ATTACCA!</div>
+            <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:6px;"></div>
         </div>
         
         <div class="log-box" id="game-log"></div>
@@ -247,8 +218,8 @@ html_template = """
         </div>
         
         <div class="side-actions">
-            <button class="action-circle" id="btn-potion" onclick="usaPozione()" style="background:var(--success); color:white;">USA 🧪</button>
-            <button class="action-circle" onclick="prossimoTurno()" style="background:#444; color:white; font-size: 11px;">PASSA<br>TURNO</button>
+            <button class="action-btn" id="btn-potion" onclick="usaPozione()" style="background:#2ecc71;">CURA 🧪</button>
+            <button class="action-btn" onclick="prossimoTurno()" style="background:#444;">PASSA ⏭️</button>
         </div>
     </div>
 
@@ -277,8 +248,7 @@ html_template = """
 
         function addLog(msg) {
             const log = document.getElementById('game-log');
-            log.innerHTML += `<div>> ${msg}</div>`;
-            log.scrollTop = log.scrollHeight;
+            log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
         }
 
         function iniziaAvventura() {
@@ -293,7 +263,7 @@ html_template = """
             let hp = (HP_MAP[classe] || 10) + 20;
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, 
-                x: 12, y: 2, movesRemaining: 6, element: null, 
+                x: 12, y: 3, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: "👤",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
@@ -316,12 +286,12 @@ html_template = """
             } catch (e) {}
 
             const hero = entities.find(e => e.tipo === 'hero');
-            hero.x = 12; hero.y = 2; hero.movesRemaining = 6;
+            hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
             for(let i=0; i < 2; i++) {
                 entities.push({
-                    nome: "Mob", hp: 10 + (mapNumber*5), tipo: 'enemy', 
-                    x: 5 + (i*10), y: 20, dead: false, icon: "👹"
+                    nome: "Nemico", hp: 10 + (mapNumber*5), tipo: 'enemy', 
+                    x: 5 + (i*10), y: 22, dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
@@ -408,12 +378,11 @@ html_template = """
             document.getElementById('moves-display').innerText = hero.movesRemaining;
             document.getElementById('gold-display').innerText = hero.inventory.coins;
             document.getElementById('potion-display').innerText = hero.inventory.potions;
-            document.getElementById('btn-potion').disabled = hero.inventory.potions <= 0;
         }
 
         function iniziaCombattimento() {
             if(isCombat) return;
-            isCombat = true; addLog("LOTTA!");
+            isCombat = true;
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
@@ -457,7 +426,7 @@ html_template = """
                 addLog(`Danni: ${d}`);
                 if(target.hp <= 0) { target.dead = true; target.element.style.opacity = '0.2'; }
                 prossimoTurno();
-            } else addLog("Fuori tiro!");
+            }
         }
 
         function turnoIA() {
@@ -485,7 +454,7 @@ html_template = """
 </html>
 """
 
-# Rendering con altezza 1000 per garantire lo spazio verticale completo dell'iframe
+# Rendering finale con calcolo altezza per evitare scrolling
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
 components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1000)
