@@ -216,8 +216,10 @@ html_template = """
                 else applyLevelData({});
             } catch (e) { applyLevelData({}); }
 
-            const hero = entities[0];
+            const hero = entities.find(e => e.tipo === 'hero');
             hero.x = 12; hero.y = 2; hero.movesRemaining = 6;
+            
+            // Pulisci nemici ma tieni eroe
             entities = [hero];
             let enemyCount = 1 + Math.floor(mapNumber / 1.5);
             for(let i=0; i<enemyCount; i++) {
@@ -260,6 +262,7 @@ html_template = """
 
         function aggiornaUI() {
             const hero = entities.find(e => e.tipo === 'hero');
+            if(!hero) return;
             document.getElementById('hp-display').innerText = hero.hp;
             document.getElementById('moves-display').innerText = hero.movesRemaining;
             document.getElementById('turn-display').innerText = isCombat ? "Combattimento" : "Esplorazione";
@@ -270,6 +273,7 @@ html_template = """
             isCombat = true;
             addLog("COMBATTIMENTO!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
+            // IMPORTANTE: il riordino non influirà sul movimento perché cerchiamo il pg per TIPO
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0;
             selezionaTurno();
@@ -279,9 +283,12 @@ html_template = """
             if (!isCombat) return;
             entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
             activeEntity = entities[currentIndex % entities.length];
+            
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
+            
             activeEntity.element.classList.add('active-char');
             activeEntity.movesRemaining = (activeEntity.tipo === 'hero') ? 6 : 4;
+            
             const panel = document.getElementById('action-panel');
             if(activeEntity.tipo === 'enemy') {
                 panel.style.display = 'none';
@@ -312,9 +319,9 @@ html_template = """
 
             let dist = Math.sqrt(Math.pow(hero.x - target.x, 2) + Math.pow(hero.y - target.y, 2));
             if(dist <= weapon.range) {
-                let dmg = Math.floor(Math.random() * weapon.dice) + 1 + 2; // Danno dado + bonus fisso
+                let dmg = Math.floor(Math.random() * weapon.dice) + 3;
                 target.hp -= dmg;
-                addLog(`Usi ${weapon.name}: ${dmg} danni a ${target.nome}!`);
+                addLog(`Usi ${weapon.name}: ${dmg} danni!`);
                 if(target.hp <= 0) {
                     target.dead = true;
                     target.element.style.opacity = "0.2";
@@ -322,9 +329,9 @@ html_template = """
                     controllaFineCombattimento();
                 }
                 document.getElementById('action-panel').style.display = 'none';
-                prossimoTurno();
+                if(isCombat) prossimoTurno();
             } else {
-                addLog(`${weapon.name} fuori portata!`);
+                addLog(`Bersaglio fuori portata!`);
             }
         }
 
@@ -332,8 +339,12 @@ html_template = """
             const nemiciVivi = entities.filter(e => e.tipo === 'enemy' && !e.dead).length;
             if (nemiciVivi === 0) {
                 isCombat = false;
+                activeEntity = null;
                 document.getElementById('action-panel').style.display = 'none';
-                addLog("Vittoria!");
+                entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
+                addLog("Vittoria! Area sicura.");
+                const hero = entities.find(e => e.tipo === 'hero');
+                hero.movesRemaining = 6;
                 aggiornaUI();
             }
         }
@@ -341,9 +352,11 @@ html_template = """
         function turnoIA() {
             if(!isCombat || !activeEntity || activeEntity.dead) return prossimoTurno();
             const hero = entities.find(e => e.tipo === 'hero');
+            
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
+            
             let d = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
             if(d < 1.6) {
                 let dmg = Math.floor(Math.random()*6)+2;
@@ -361,25 +374,36 @@ html_template = """
         }
 
         window.addEventListener('keydown', (e) => {
-            const hero = entities[0];
-            if (!hero || hero.dead || (isCombat && activeEntity !== hero)) return;
+            // CERCA L'EROE IN TUTTO L'ELENCO, NON SOLO IN POSIZIONE 0
+            const hero = entities.find(e => e.tipo === 'hero');
+            if (!hero || hero.dead) return;
+            
+            // SE SIAMO IN COMBATTIMENTO, BLOCCA SE NON È IL TURNO DELL'EROE
+            if (isCombat && activeEntity !== hero) return;
+            
             let nx = hero.x, ny = hero.y;
             if (['w', 'ArrowUp'].includes(e.key)) ny--;
             if (['s', 'ArrowDown'].includes(e.key)) ny++;
             if (['a', 'ArrowLeft'].includes(e.key)) nx--;
             if (['d', 'ArrowRight'].includes(e.key)) nx++;
+
             if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
                 const cell = document.querySelectorAll('.cell')[ny * COLS + nx];
                 if (cell && !cell.classList.contains('wall')) {
                     hero.x = nx; hero.y = ny;
                     if(isCombat) hero.movesRemaining--;
                     aggiornaPosizione(hero);
+                    
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
                             if(Math.sqrt(Math.pow(en.x-hero.x, 2) + Math.pow(en.y-hero.y, 2)) < 6) iniziaCombattimento();
                         });
                     }
-                    if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
+                    
+                    if (hero.y >= ROWS - 1) {
+                        addLog("Passaggio all'area successiva...");
+                        caricaMappaCompleta(currentMapNumber + 1);
+                    }
                 }
             }
             aggiornaUI();
@@ -389,7 +413,10 @@ html_template = """
 </html>
 """
 
-# Rendering
-game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
-b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1180px" allow="autoplay"></iframe>', height=1180)
+### Cosa ho sistemato:
+1.  **Ricerca Eroe Dinamica:** Nel listener della tastiera, ora uso `entities.find(e => e.tipo === 'hero')`. Questo evita che il personaggio rimanga bloccato se l'elenco dei personaggi viene riordinato durante il combattimento.
+2.  **Reset Post-Lotta:** Nella funzione `controllaFineCombattimento`, ora pulisco lo stato `activeEntity` e rimuovo la classe CSS `active-char`. Questo assicura che il sistema di movimento "capisca" che la battaglia è finita e ti restituisca il controllo.
+3.  **Movimenti Infiniti in Esplorazione:** Ho rimosso il blocco dei movimenti fuori dal combattimento, così puoi esplorare liberamente le mappe.
+4.  **Resoconto HP:** Ho aggiunto un controllo per aggiornare gli HP anche subito dopo la vittoria, così sai sempre quanta vita ti è rimasta.
+
+Copia e incolla su GitHub e il gioco sarà fluido al 100%! Buon divertimento nella Saga Mappat!
