@@ -216,7 +216,6 @@ html_template = """
 
     <script>
         const BASE_URL = "__GITHUB_BASE__";
-        // Dimensioni griglia 24 Colonne e 36 Righe
         const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
@@ -238,6 +237,7 @@ html_template = """
             "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }]
         };
 
+        const MOVIMENTO_MAX = 6;
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
 
         function playIntroOnce() {
@@ -255,33 +255,47 @@ html_template = """
             log.prepend(entry);
         }
 
+        // Funzione per controllare la linea di vista (Bresenham)
+        function hasLineOfSight(p1, p2) {
+            let x0 = Math.floor(p1.x), y0 = Math.floor(p1.y);
+            let x1 = Math.floor(p2.x), y1 = Math.floor(p2.y);
+            let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+            let sx = (x0 < x1) ? 1 : -1, sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+            const cells = document.querySelectorAll('.cell');
+
+            while (true) {
+                if (x0 === x1 && y0 === y1) break;
+                let e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+                if (x0 === x1 && y0 === y1) break;
+                
+                let idx = y0 * COLS + x0;
+                if (cells[idx] && cells[idx].classList.contains('wall')) return false;
+            }
+            return true;
+        }
+
         function iniziaAvventura() {
-            // Nascondi schermata di avvio
             document.getElementById('setup-screen').style.display = 'none';
-            
-            // Genera Griglia Visiva
             const grid = document.getElementById("grid");
             grid.innerHTML = "";
             for (let i = 0; i < COLS * ROWS; i++) {
                 const c = document.createElement("div"); c.className = "cell"; grid.appendChild(c);
             }
-
             const nome = document.getElementById('p-nome').value || "Eroe";
             const classe = document.getElementById('p-classe').value;
             const razza = document.getElementById('p-razza').value;
-            
             let hp = (HP_MAP[classe] || 10) + 20;
             if(razza === "Nano") hp += 5;
             
-            // Inizializza Eroe
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, razza,
-                x: 12, y: 3, movesRemaining: 6, element: null, 
+                x: 12, y: 3, movesRemaining: MOVIMENTO_MAX, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza] || "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
-
-            // Carica la prima mappa
             caricaMappaCompleta(1);
         }
 
@@ -289,36 +303,29 @@ html_template = """
             currentMapNumber = mapNumber;
             document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
-            
             const imgEl = document.getElementById('map-img');
             imgEl.style.display = 'none';
             imgEl.src = BASE_URL + "Maps/" + mapNumber + ".jpg";
             imgEl.onload = () => imgEl.style.display = 'block';
-            imgEl.onerror = () => {
-                if(!imgEl.src.endsWith(".png")) imgEl.src = BASE_URL + "Maps/" + mapNumber + ".png";
-            };
-
+            imgEl.onerror = () => { if(!imgEl.src.endsWith(".png")) imgEl.src = BASE_URL + "Maps/" + mapNumber + ".png"; };
             audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
             audioPlayer.play().catch(e => {});
 
-            // Carica dati del livello (Muri e Loot)
             try {
                 const response = await fetch(BASE_URL + "Maps/" + mapNumber + ".json");
                 if (response.ok) applyLevelData(await response.json());
                 else applyLevelData({});
             } catch (e) { applyLevelData({}); }
 
-            // Ripristina eroe e genera nemici
             const hero = entities.find(e => e.tipo === 'hero');
-            hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
+            hero.x = 12; hero.y = 3; hero.movesRemaining = MOVIMENTO_MAX;
             entities = [hero];
-            
             let enemyNum = 2 + Math.floor(mapNumber / 3);
             for(let i=0; i < enemyNum; i++) {
                 entities.push({
                     nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
                     x: 4 + Math.floor(Math.random()*16), y: 15 + Math.floor(Math.random()*15), 
-                    dead: false, icon: "👹"
+                    dead: false, icon: "👹", movesRemaining: MOVIMENTO_MAX
                 });
             }
             disegnaEntita();
@@ -330,7 +337,6 @@ html_template = """
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
             if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
-            
             loots = {};
             document.querySelectorAll('.loot-icon').forEach(l => l.remove());
             if (data.loot) data.loot.forEach(item => spawnLoot(item.idx, item.type));
@@ -367,13 +373,8 @@ html_template = """
             if (ent.tipo === 'hero') {
                 const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
                 if (loots[idx]) {
-                    if (loots[idx].type === 'pozione') {
-                        ent.inventory.potions++;
-                        addLog("Pozione raccolta!");
-                    } else {
-                        ent.inventory.coins += 25;
-                        addLog("Oro raccolto!");
-                    }
+                    if (loots[idx].type === 'pozione') { ent.inventory.potions++; addLog("Pozione raccolta!"); }
+                    else { ent.inventory.coins += 25; addLog("Oro raccolto!"); }
                     loots[idx].element.remove(); delete loots[idx];
                     aggiornaUI();
                 }
@@ -383,9 +384,9 @@ html_template = """
         function muoviEroe(dx, dy) {
             const hero = entities.find(e => e.tipo === 'hero');
             if (!hero || (isCombat && activeEntity !== hero)) return;
+            if (isCombat && hero.movesRemaining <= 0) return;
             
             let nx = hero.x + dx, ny = hero.y + dy;
-            
             if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
                 const idx = Math.floor(ny) * COLS + Math.floor(nx);
                 const cells = document.querySelectorAll('.cell');
@@ -393,11 +394,10 @@ html_template = """
                     hero.x = nx; hero.y = ny;
                     if(isCombat) hero.movesRemaining--;
                     aggiornaPosizione(hero);
-                    
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
                             let dist = Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2));
-                            if(dist < 5) iniziaCombattimento();
+                            if(dist < 5 && hasLineOfSight(en, hero)) iniziaCombattimento();
                         });
                     }
                     if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
@@ -428,9 +428,8 @@ html_template = """
 
         function iniziaCombattimento() {
             if(isCombat) return;
-            isCombat = true; 
-            addLog("COMBATTIMENTO ATTIVATO!");
-            entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
+            isCombat = true; addLog("COMBATTIMENTO ATTIVATO!");
+            entities.forEach(ent => { ent.ini = Math.floor(Math.random()*20)+1; ent.movesRemaining = MOVIMENTO_MAX; });
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
         }
@@ -441,6 +440,7 @@ html_template = """
             activeEntity = entities[currentIndex % entities.length];
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
             activeEntity.element.classList.add('active-char');
+            activeEntity.movesRemaining = MOVIMENTO_MAX; // Reset passi a inizio turno
             if(activeEntity.tipo === 'enemy') setTimeout(turnoIA, 600);
             else renderAzioni();
             aggiornaUI();
@@ -452,10 +452,8 @@ html_template = """
             container.innerHTML = '';
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
-                b.className = 'pc-btn';
-                b.innerHTML = w.icon + " ATTACCA CON " + w.name;
-                b.onclick = () => attacco(w);
-                container.appendChild(b);
+                b.className = 'pc-btn'; b.innerHTML = w.icon + " ATTACCA CON " + w.name;
+                b.onclick = () => attacco(w); container.appendChild(b);
             });
         }
 
@@ -463,53 +461,80 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
-            if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
-                let d = Math.floor(Math.random()*w.dice)+6; 
-                target.hp -= d;
+            const dist = Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2));
+            if(dist <= w.range && hasLineOfSight(hero, target)) {
+                let d = Math.floor(Math.random()*w.dice)+6; target.hp -= d;
                 addLog("Colpisci per " + d + " danni!");
                 if(target.hp <= 0) { 
-                    target.dead = true; target.element.style.opacity = '0.2';
-                    addLog("Nemico ucciso!");
+                    target.dead = true; target.element.style.opacity = '0.2'; addLog("Nemico ucciso!");
                     const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
                     const rand = Math.random();
-                    if(rand < 0.2) spawnLoot(idx, 'pozione');
-                    else if(rand < 0.8) spawnLoot(idx, 'moneta');
+                    if(rand < 0.2) spawnLoot(idx, 'pozione'); else if(rand < 0.8) spawnLoot(idx, 'moneta');
                 }
                 prossimoTurno();
-            } else addLog("Nemico troppo lontano!");
+            } else addLog("Impossibile colpire (fuori tiro o muro in mezzo)!");
         }
 
         function turnoIA() {
             if(!isCombat || !activeEntity || activeEntity.dead) return prossimoTurno();
             const hero = entities.find(e => e.tipo === 'hero');
-            if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
-            if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
-            aggiornaPosizione(activeEntity);
-            if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
-                let d = Math.floor(Math.random()*6)+4;
-                hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
-                if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
+            const cells = document.querySelectorAll('.cell');
+
+            // Il nemico si muove solo se vede l'eroe
+            if (hasLineOfSight(activeEntity, hero)) {
+                while (activeEntity.movesRemaining > 0) {
+                    let dist = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
+                    if (dist < 1.6) break; // Già a contatto
+
+                    let dx = hero.x > activeEntity.x ? 1 : (hero.x < activeEntity.x ? -1 : 0);
+                    let dy = hero.y > activeEntity.y ? 1 : (hero.y < activeEntity.y ? -1 : 0);
+                    
+                    let moved = false;
+                    // Prova movimento orizzontale
+                    if (dx !== 0) {
+                        let nx = activeEntity.x + dx;
+                        let idx = activeEntity.y * COLS + nx;
+                        if (cells[idx] && !cells[idx].classList.contains('wall')) {
+                            activeEntity.x = nx; moved = true;
+                        }
+                    }
+                    // Se non può o dopo X, prova verticale
+                    if (!moved && dy !== 0) {
+                        let ny = activeEntity.y + dy;
+                        let idx = ny * COLS + activeEntity.x;
+                        if (cells[idx] && !cells[idx].classList.contains('wall')) {
+                            activeEntity.y = ny; moved = true;
+                        }
+                    }
+                    
+                    if (!moved) break; // Bloccato dai muri
+                    activeEntity.movesRemaining--;
+                }
+                aggiornaPosizione(activeEntity);
+
+                // Attacco se a contatto
+                if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
+                    let d = Math.floor(Math.random()*6)+4;
+                    hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
+                    if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
+                }
+            } else {
+                addLog("Il mostro ti cerca ma non ti vede...");
             }
             setTimeout(prossimoTurno, 600);
         }
 
         function prossimoTurno() { 
             if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) {
-                isCombat = false; 
-                entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
-                addLog("Vittoria! Area ripulita."); 
-                aggiornaUI();
-                return;
+                isCombat = false; entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
+                addLog("Vittoria! Area ripulita."); aggiornaUI(); return;
             }
             currentIndex++; selezionaTurno(); 
         }
 
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
-            if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
-                e.preventDefault();
-            }
-            
+            if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) e.preventDefault();
             if (['w', 'arrowup'].includes(key)) muoviEroe(0, -1);
             if (['s', 'arrowdown'].includes(key)) muoviEroe(0, 1);
             if (['a', 'arrowleft'].includes(key)) muoviEroe(-1, 0);
