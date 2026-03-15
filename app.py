@@ -31,7 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS - NOTA: NON è una f-string per evitare conflitti con le graffe {}
+# Template HTML/JS/CSS
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -112,7 +112,8 @@ html_template = """
             position: absolute; width: 8.33%; height: 5.55%; 
             border-radius: 50%; border: 3px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: transform 0.15s linear; font-size: 32px; 
+            transition: left 0.15s linear, top 0.15s linear; font-size: 32px; 
+            transform-origin: center;
         }
         .hero { box-shadow: 0 0 20px var(--primary); border: 4px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
         .enemy { background: #800; border-color: #f88; }
@@ -139,7 +140,7 @@ html_template = """
     <div id="setup-screen">
         <div class="card">
             <h1 style="color:var(--primary); margin:0; font-size: 40px;">D&D ARENA</h1>
-            <p style="color:#aaa; font-weight:bold; letter-spacing: 2px;">SAGA MAPPAT - PC DEFINITIVA</p>
+            <p style="color:#aaa; font-weight:bold; letter-spacing: 2px;">SAGA MAPPAT - PC EDITION</p>
             
             <div class="setup-grid">
                 <div class="input-group">
@@ -174,7 +175,7 @@ html_template = """
                     </select>
                 </div>
             </div>
-            <button class="start-btn" onclick="iniziaAvventura()">COMINCIA LA SAGA ⚔️</button>
+            <button class="start-btn" onclick="iniziaAvventura()">INIZIA ⚔️</button>
         </div>
     </div>
 
@@ -215,7 +216,7 @@ html_template = """
 
     <script>
         const BASE_URL = "__GITHUB_BASE__";
-        // Raddoppiata dimensione celle (Griglia 12x18 invece di 24x36)
+        // Configurazione Griglia PC Ottimizzata (Scala doppia)
         const COLS = 12, ROWS = 18;
         const audioPlayer = document.getElementById('bg-music');
 
@@ -223,18 +224,18 @@ html_template = """
         const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Paladino": 12, "Ranger": 10, "Chierico": 10, "Ladro": 10, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
         
         const WEAPON_CONFIG = {
-            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.1, icon: "🪓" }],
-            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.1, icon: "⚔️" }],
-            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.1, icon: "🔨" }],
-            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 6, icon: "🏹" }],
-            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.1, icon: "🏏" }],
-            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.1, icon: "🔪" }],
-            "Bardo": [{ name: "Stocco", dice: 8, range: 1.1, icon: "🤺" }],
-            "Druido": [{ name: "Bastone", dice: 6, range: 1.1, icon: "🦯" }],
-            "Monaco": [{ name: "Pugni", dice: 6, range: 1.1, icon: "👊" }],
-            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 5, icon: "💜" }],
-            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 6, icon: "🪄" }],
-            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 5, icon: "☄️" }]
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.2, icon: "🪓" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.2, icon: "⚔️" }],
+            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.2, icon: "🔨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 8, icon: "🏹" }],
+            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.2, icon: "🏏" }],
+            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.2, icon: "🔪" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.2, icon: "🤺" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.2, icon: "🦯" }],
+            "Monaco": [{ name: "Pugni", dice: 6, range: 1.2, icon: "👊" }],
+            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 6, icon: "💜" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 8, icon: "🪄" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 6, icon: "☄️" }]
         };
 
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
@@ -303,7 +304,7 @@ html_template = """
             hero.x = 6; hero.y = 1; hero.movesRemaining = 6;
             entities = [hero];
             
-            let enemyNum = 1 + Math.floor(mapNumber / 2);
+            let enemyNum = 2;
             for(let i=0; i < enemyNum; i++) {
                 entities.push({
                     nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
@@ -313,13 +314,12 @@ html_template = """
             }
             disegnaEntita();
             aggiornaUI();
-            addLog("Ingresso nell'area " + mapNumber);
+            addLog("Area " + mapNumber + " caricata.");
         }
 
         function applyLevelData(data) {
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
-            // Poiché abbiamo dimezzato la risoluzione della griglia, le mappe JSON dovrebbero riflettere COLS=12
             if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
             
             loots = {};
@@ -352,6 +352,7 @@ html_template = """
         }
 
         function aggiornaPosizione(ent) {
+            if (!ent.element) return;
             ent.element.style.left = (ent.x * (100/COLS)) + '%';
             ent.element.style.top = (ent.y * (100/ROWS)) + '%';
             if (ent.tipo === 'hero') {
@@ -359,10 +360,10 @@ html_template = """
                 if (loots[idx]) {
                     if (loots[idx].type === 'pozione') {
                         ent.inventory.potions++;
-                        addLog("Hai raccolto una pozione!");
+                        addLog("Pozione raccolta!");
                     } else {
                         ent.inventory.coins += 25;
-                        addLog("Hai trovato dell'oro!");
+                        addLog("Oro raccolto!");
                     }
                     loots[idx].element.remove(); delete loots[idx];
                     aggiornaUI();
@@ -373,16 +374,21 @@ html_template = """
         function muoviEroe(dx, dy) {
             const hero = entities.find(e => e.tipo === 'hero');
             if (!hero || (isCombat && activeEntity !== hero)) return;
+            
             let nx = hero.x + dx, ny = hero.y + dy;
+            
             if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                const cell = document.querySelectorAll('.cell')[ny * COLS + nx];
-                if (cell && !cell.classList.contains('wall')) {
+                const idx = ny * COLS + nx;
+                const cells = document.querySelectorAll('.cell');
+                if (cells[idx] && !cells[idx].classList.contains('wall')) {
                     hero.x = nx; hero.y = ny;
                     if(isCombat) hero.movesRemaining--;
                     aggiornaPosizione(hero);
+                    
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
-                            if(Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2)) < 3) iniziaCombattimento();
+                            let dist = Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2));
+                            if(dist < 3) iniziaCombattimento();
                         });
                     }
                     if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
@@ -398,8 +404,6 @@ html_template = """
                 hero.hp = Math.min(hero.maxHP, hero.hp + 15);
                 addLog("Cura effettuata (+15 HP)"); 
                 aggiornaUI();
-            } else {
-                addLog("Non hai pozioni!");
             }
         }
 
@@ -407,7 +411,7 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             if(!hero) return;
             document.getElementById('hp-display').innerText = hero.hp;
-            document.getElementById('moves-display').innerText = hero.movesRemaining;
+            document.getElementById('moves-display').innerText = Math.max(0, hero.movesRemaining);
             document.getElementById('gold-display').innerText = hero.inventory.coins;
             document.getElementById('potion-display').innerText = hero.inventory.potions;
             document.getElementById('btn-potion').disabled = hero.inventory.potions <= 0;
@@ -440,7 +444,7 @@ html_template = """
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
                 b.className = 'pc-btn';
-                b.innerHTML = w.icon + " ATTACCA (" + w.name + ")";
+                b.innerHTML = w.icon + " ATTACCA CON " + w.name;
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
             });
@@ -493,6 +497,11 @@ html_template = """
 
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
+            // Evita lo scorrimento della pagina con le frecce o lo spazio
+            if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
+                e.preventDefault();
+            }
+            
             if (['w', 'arrowup'].includes(key)) muoviEroe(0, -1);
             if (['s', 'arrowdown'].includes(key)) muoviEroe(0, 1);
             if (['a', 'arrowleft'].includes(key)) muoviEroe(-1, 0);
