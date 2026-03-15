@@ -89,13 +89,13 @@ html_template = """
         .start-btn:hover { background: #fff; transform: translateY(-2px); }
 
         #ui-top { 
-            height: 70px; width: 100%; background: #111; 
+            height: 60px; width: 100%; background: #111; 
             display: flex; justify-content: center; align-items: center;
             border-bottom: 2px solid #333; z-index: 1000; gap: 20px; flex-shrink: 0;
         }
-        .stat-badge { font-weight: bold; font-size: 17px; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #222; border-radius: 10px; border: 1px solid #444; }
+        .stat-badge { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #222; border-radius: 10px; border: 1px solid #444; }
 
-        #main-layout { display: flex; flex: 1; width: 100%; height: calc(100% - 70px); overflow: hidden; }
+        #main-layout { display: flex; flex: 1; width: 100%; height: calc(100% - 60px); overflow: hidden; }
 
         #game-viewport { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; background: #000; padding: 15px; }
         #game-container { 
@@ -105,31 +105,31 @@ html_template = """
         
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
-        #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(18, 1fr); z-index: 5; pointer-events: none; }
+        #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); }
 
         .char { 
-            position: absolute; width: 8.33%; height: 5.55%; 
-            border-radius: 50%; border: 3px solid white; 
+            position: absolute; width: 4.16%; height: 2.77%; 
+            border-radius: 50%; border: 2px solid white; 
             z-index: 50; display: flex; align-items: center; justify-content: center; 
-            transition: left 0.15s linear, top 0.15s linear; font-size: 32px; 
+            transition: left 0.15s linear, top 0.15s linear; font-size: 18px; 
             transform-origin: center;
         }
-        .hero { box-shadow: 0 0 20px var(--primary); border: 4px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
+        .hero { box-shadow: 0 0 10px var(--primary); border: 2px solid var(--primary); z-index: 100; background: rgba(241, 196, 15, 0.2); }
         .enemy { background: #800; border-color: #f88; }
-        .active-char { border-color: #fff; box-shadow: 0 0 35px #fff; z-index: 110; outline: 4px solid #fff; }
+        .active-char { border-color: #fff; box-shadow: 0 0 25px #fff; z-index: 110; outline: 3px solid #fff; }
 
         #side-panel { width: 340px; background: #111; border-left: 2px solid #333; display: flex; flex-direction: column; padding: 20px; gap: 15px; flex-shrink: 0; }
         .action-card { background: #222; border: 1px solid var(--primary); border-radius: 12px; padding: 15px; text-align: center; }
         #log-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 12px; overflow-y: auto; color: #aaa; font-family: 'Courier New', monospace; }
-        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #1a1a1a; padding-bottom: 2px; }
+        .log-entry { margin-bottom: 4px; border-left: 3px solid var(--primary); padding-left: 5px; }
 
-        .pc-btn { background: var(--primary); color: black; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; font-size: 15px; }
+        .pc-btn { background: var(--primary); color: black; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; font-size: 14px; }
         .pc-btn:hover { background: #fff; }
         .pc-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        .loot-icon { position: absolute; z-index: 10; font-size: 32px; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: float 2s infinite ease-in-out; }
-        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+        .loot-icon { position: absolute; z-index: 10; font-size: 18px; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
         
         kbd { background: #444; border-radius: 4px; border: 1px solid #666; color: #fff; padding: 2px 6px; font-size: 11px; margin: 0 2px; }
     </style>
@@ -175,7 +175,7 @@ html_template = """
                     </select>
                 </div>
             </div>
-            <button class="start-btn" onclick="iniziaAvventura()">INIZIA ⚔️</button>
+            <button class="start-btn" onclick="iniziaAvventura()">INIZIA LA SAGA ⚔️</button>
         </div>
     </div>
 
@@ -216,26 +216,26 @@ html_template = """
 
     <script>
         const BASE_URL = "__GITHUB_BASE__";
-        // Configurazione Griglia PC Ottimizzata (Scala doppia)
-        const COLS = 12, ROWS = 18;
+        // Ripristinata densità originale
+        const COLS = 24, ROWS = 36;
         const audioPlayer = document.getElementById('bg-music');
 
         const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Halfling": "👦", "Dragonide": "🐲", "Gnomo": "🧙‍♂️", "Mezzelfo": "🧝‍♂️", "Mezzorco": "👹", "Tiefling": "😈" };
         const HP_MAP = { "Barbaro": 14, "Guerriero": 12, "Paladino": 12, "Ranger": 10, "Chierico": 10, "Ladro": 10, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
         
         const WEAPON_CONFIG = {
-            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.2, icon: "🪓" }],
-            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.2, icon: "⚔️" }],
-            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.2, icon: "🔨" }],
-            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 8, icon: "🏹" }],
-            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.2, icon: "🏏" }],
-            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.2, icon: "🔪" }],
-            "Bardo": [{ name: "Stocco", dice: 8, range: 1.2, icon: "🤺" }],
-            "Druido": [{ name: "Bastone", dice: 6, range: 1.2, icon: "🦯" }],
-            "Monaco": [{ name: "Pugni", dice: 6, range: 1.2, icon: "👊" }],
-            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 6, icon: "💜" }],
-            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 8, icon: "🪄" }],
-            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 6, icon: "☄️" }]
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }],
+            "Paladino": [{ name: "Martello Guerra", dice: 10, range: 1.5, icon: "🔨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }],
+            "Chierico": [{ name: "Mazza Pesante", dice: 6, range: 1.5, icon: "🏏" }],
+            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }],
+            "Monaco": [{ name: "Pugni", dice: 6, range: 1.5, icon: "👊" }],
+            "Warlock": [{ name: "Deflagrazione", dice: 10, range: 10, icon: "💜" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }]
         };
 
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
@@ -271,7 +271,7 @@ html_template = """
             
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', classe, razza,
-                x: 6, y: 1, movesRemaining: 6, element: null, 
+                x: 12, y: 3, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza] || "🧔",
                 weapons: WEAPON_CONFIG[classe], inventory: { potions: 1, coins: 0 }
             }];
@@ -301,20 +301,20 @@ html_template = """
             } catch (e) { applyLevelData({}); }
 
             const hero = entities.find(e => e.tipo === 'hero');
-            hero.x = 6; hero.y = 1; hero.movesRemaining = 6;
+            hero.x = 12; hero.y = 3; hero.movesRemaining = 6;
             entities = [hero];
             
             let enemyNum = 2;
             for(let i=0; i < enemyNum; i++) {
                 entities.push({
                     nome: "Mostro", hp: 10 + (mapNumber*8), tipo: 'enemy', 
-                    x: 2 + Math.floor(Math.random()*8), y: 8 + Math.floor(Math.random()*7), 
+                    x: 4 + Math.floor(Math.random()*16), y: 15 + Math.floor(Math.random()*15), 
                     dead: false, icon: "👹"
                 });
             }
             disegnaEntita();
             aggiornaUI();
-            addLog("Area " + mapNumber + " caricata.");
+            addLog("Mappa " + mapNumber + " caricata.");
         }
 
         function applyLevelData(data) {
@@ -378,7 +378,7 @@ html_template = """
             let nx = hero.x + dx, ny = hero.y + dy;
             
             if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                const idx = ny * COLS + nx;
+                const idx = Math.floor(ny) * COLS + Math.floor(nx);
                 const cells = document.querySelectorAll('.cell');
                 if (cells[idx] && !cells[idx].classList.contains('wall')) {
                     hero.x = nx; hero.y = ny;
@@ -388,7 +388,7 @@ html_template = """
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
                             let dist = Math.sqrt(Math.pow(en.x-hero.x,2)+Math.pow(en.y-hero.y,2));
-                            if(dist < 3) iniziaCombattimento();
+                            if(dist < 5) iniziaCombattimento();
                         });
                     }
                     if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
@@ -420,7 +420,7 @@ html_template = """
         function iniziaCombattimento() {
             if(isCombat) return;
             isCombat = true; 
-            addLog("LOTTA INIZIATA!");
+            addLog("COMBATTIMENTO ATTIVATO!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0; selezionaTurno();
@@ -451,7 +451,7 @@ html_template = """
         }
 
         function attacco(w) {
-            const hero = entities.find(e => e.tipo === 'hero');
+            const hero = entities.find(e => e.tipo hijacking= 'hero');
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
             if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
@@ -476,7 +476,7 @@ html_template = """
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
-            if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.1) {
+            if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
                 let d = Math.floor(Math.random()*6)+4;
                 hero.hp -= d; addLog("Il mostro ti morde: -" + d + " HP");
                 if(hero.hp <= 0) { alert("SEI MORTO."); location.reload(); }
@@ -497,7 +497,6 @@ html_template = """
 
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
-            // Evita lo scorrimento della pagina con le frecce o lo spazio
             if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
                 e.preventDefault();
             }
