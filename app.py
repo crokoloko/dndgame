@@ -14,20 +14,25 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS per pulire l'interfaccia Streamlit e ottimizzare per PC
+# CSS per pulire l'interfaccia Streamlit e rimuovere margini/padding che schiacciano il gioco
 st.markdown("""
     <style>
-        .block-container { padding: 0rem; max-width: 100%; }
+        .block-container { padding: 0rem !important; max-width: 100% !important; }
         .stApp { background-color: #050505; }
         footer {visibility: hidden;}
         header {visibility: hidden;}
-        iframe { border: none; width: 100vw; height: 100vh; display: block; }
         [data-testid="stHeader"] {display: none;}
         #MainMenu {visibility: hidden;}
+        /* Forza l'iframe a occupare tutto lo spazio disponibile */
+        iframe { 
+            width: 100% !important; 
+            height: 98vh !important; 
+            border: none !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS Ottimizzato per PC
+# Template HTML/JS/CSS - NOTA: NON è una f-string per evitare SyntaxError con le graffe {}
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -41,37 +46,57 @@ html_template = """
             --danger: #e74c3c;
             --success: #2ecc71; 
             --bg: #050505;
-            --panel: rgba(20, 20, 20, 0.9);
+            --panel: rgba(20, 20, 20, 0.95);
         }
-        body { 
+        body, html { 
             background-color: var(--bg); 
             color: #eee; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0; padding: 0;
-            display: flex; flex-direction: column; 
-            height: 100vh; width: 100vw;
+            height: 100%; width: 100%;
             overflow: hidden;
         }
         
-        /* Schermata di Benvenuto */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Schermata di Benvenuto - Corretta per centratura PC */
         #setup-screen { 
-            position: fixed; inset: 0; 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%;
             background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; 
             z-index: 5000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: -1; }
-        .card { 
-            background: var(--panel); border: 2px solid var(--primary); 
-            border-radius: 15px; padding: 40px; width: 450px; text-align: center; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        #setup-screen::before { 
+            content: ""; 
+            position: absolute; inset: 0; 
+            background: rgba(0, 0, 0, 0.75); 
+            z-index: -1; 
         }
+        
+        .card { 
+            background: var(--panel); 
+            border: 2px solid var(--primary); 
+            border-radius: 15px; 
+            padding: 40px; 
+            width: 90%;
+            max-width: 500px; 
+            text-align: center; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            z-index: 5001;
+        }
+        
         .input-group { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
         label { font-size: 14px; color: var(--primary); font-weight: bold; }
         input, select { 
             background: #111; border: 1px solid #444; color: white; 
             padding: 12px; border-radius: 8px; font-size: 16px; width: 100%;
         }
+        
         .start-btn { 
             background: var(--primary); color: black; border: none; 
             padding: 18px; border-radius: 10px; font-weight: bold; width: 100%; font-size: 20px; cursor: pointer;
@@ -79,20 +104,21 @@ html_template = """
         }
         .start-btn:hover { background: #fff; transform: scale(1.02); }
 
-        /* Dashboard Superiore (PC Style) */
+        /* Dashboard Superiore */
         #ui-top { 
             height: 70px; width: 100%; background: #111; 
             display: flex; justify-content: center; align-items: center;
             border-bottom: 2px solid #333; z-index: 1000; gap: 30px;
+            flex-shrink: 0;
         }
-        .stat-badge { font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 10px; padding: 5px 15px; background: #222; border-radius: 10px; border: 1px solid #444; }
+        .stat-badge { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 10px; padding: 5px 15px; background: #222; border-radius: 10px; border: 1px solid #444; }
 
         /* Layout Principale */
         #main-layout {
             display: flex;
             flex: 1;
-            width: 100vw;
-            height: calc(100vh - 70px);
+            width: 100%;
+            height: calc(100% - 70px);
             overflow: hidden;
         }
 
@@ -104,16 +130,18 @@ html_template = """
             justify-content: center;
             position: relative;
             background: #000;
-            padding: 20px;
+            padding: 10px;
         }
+        
         #game-container { 
             position: relative; 
-            height: 100%;
+            height: 95%;
             aspect-ratio: 24 / 36;
             background: #111;
             box-shadow: 0 0 40px rgba(0,0,0,1);
             border: 2px solid #333;
         }
+        
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: fill; display: none; }
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
@@ -133,13 +161,14 @@ html_template = """
 
         /* Pannello Info Destro */
         #side-panel {
-            width: 350px;
+            width: 320px;
             background: #111;
             border-left: 2px solid #333;
             display: flex;
             flex-direction: column;
             padding: 20px;
             gap: 20px;
+            flex-shrink: 0;
         }
 
         .action-card {
@@ -163,7 +192,6 @@ html_template = """
         }
         .log-entry { margin-bottom: 5px; border-bottom: 1px solid #222; padding-bottom: 3px; }
 
-        /* Bottoni */
         .pc-btn {
             background: var(--primary);
             color: black;
@@ -196,7 +224,7 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin:0; font-size: 42px;">D&D ARENA</h1>
+            <h1 style="color:var(--primary); margin:0; font-size: 38px;">D&D ARENA</h1>
             <p style="color:#aaa; margin-top:5px; font-weight:bold;">SAGA MAPPAT - PC EDITION</p>
             <div class="input-group">
                 <label>Nome del tuo Eroe</label>
@@ -247,7 +275,7 @@ html_template = """
             </div>
 
             <div style="font-size:11px; color:#666; text-align:center;">
-                Comandi: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> per muoverti.
+                Muoviti con: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
             </div>
         </div>
     </div>
@@ -308,13 +336,13 @@ html_template = """
             document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
             const imgEl = document.getElementById('map-img');
-            imgEl.src = BASE_URL + `Maps/${mapNumber}.jpg`;
+            imgEl.src = BASE_URL + "Maps/" + mapNumber + ".jpg";
             imgEl.onload = () => imgEl.style.display = 'block';
-            audioPlayer.src = BASE_URL + `Music/${mapNumber}.mp3`;
+            audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
             audioPlayer.play().catch(e => {});
 
             try {
-                const response = await fetch(`${BASE_URL}Maps/${mapNumber}.json`);
+                const response = await fetch(BASE_URL + "Maps/" + mapNumber + ".json");
                 if (response.ok) applyLevelData(await response.json());
                 else applyLevelData({});
             } catch (e) { applyLevelData({}); }
@@ -458,7 +486,7 @@ html_template = """
             hero.weapons.forEach(w => {
                 const b = document.createElement('button');
                 b.className = 'pc-btn';
-                b.innerHTML = `${w.icon} ATTACCA CON ${w.name}`;
+                b.innerHTML = w.icon + " ATTACCA CON " + w.name;
                 b.onclick = () => attacco(w);
                 container.appendChild(b);
             });
@@ -471,7 +499,7 @@ html_template = """
             if(Math.sqrt(Math.pow(hero.x-target.x,2)+Math.pow(hero.y-target.y,2)) <= w.range) {
                 let d = Math.floor(Math.random()*w.dice)+6; 
                 target.hp -= d;
-                addLog(`Colpisci ${target.nome} per ${d} danni!`);
+                addLog("Colpisci per " + d + " danni!");
                 if(target.hp <= 0) { 
                     target.dead = true; 
                     target.element.style.opacity = '0.2';
@@ -489,7 +517,7 @@ html_template = """
             aggiornaPosizione(activeEntity);
             if(Math.sqrt(Math.pow(activeEntity.x-hero.x,2)+Math.pow(activeEntity.y-hero.y,2)) < 1.6) {
                 let d = Math.floor(Math.random()*5)+4;
-                hero.hp -= d; addLog(`Il mostro ti colpisce: -${d} HP`);
+                hero.hp -= d; addLog("Il mostro ti colpisce: -" + d + " HP");
                 if(hero.hp <= 0) { alert("L'eroe è caduto in battaglia."); location.reload(); }
             }
             setTimeout(prossimoTurno, 600);
@@ -506,7 +534,6 @@ html_template = """
             currentIndex++; selezionaTurno(); 
         }
 
-        // --- CONTROLLI TASTIERA PC ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             if (['w', 'arrowup'].includes(key)) muoviEroe(0, -1);
@@ -521,7 +548,7 @@ html_template = """
 </html>
 """
 
-# Rendering finale
+# Rendering finale con height ricalcolato per PC
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=1000)
+components.html(game_html, height=1000, scrolling=False)
