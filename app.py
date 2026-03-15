@@ -8,73 +8,91 @@ REPO = "dndgame"
 BRANCH = "main"
 GITHUB_BASE = f"https://raw.githubusercontent.com/{USER}/{REPO}/{BRANCH}/"
 
-st.set_page_config(page_title="D&D Arena del Destino", layout="wide")
+st.set_page_config(page_title="D&D Arena Mobile", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS per pulire l'interfaccia Streamlit
+# CSS per pulire l'interfaccia Streamlit e adattarla al mobile
 st.markdown("""
     <style>
         .block-container { padding: 0rem; }
         .stApp { background-color: #050505; }
         footer {visibility: hidden;}
         header {visibility: hidden;}
-        iframe { border: none; }
+        iframe { border: none; width: 100%; height: 100vh; }
+        #MainMenu {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS
+# Template HTML/JS/CSS ottimizzato per Mobile
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D Arena del Destino</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D&D Arena Mobile</title>
     <style>
         :root {
             --primary: #f1c40f; --secondary: #2c3e50; --danger: #e74c3c;
             --success: #2ecc71; --info: #3498db; --bg: #050505;
-            --panel: rgba(20, 20, 20, 0.95);
+            --panel: rgba(20, 20, 20, 0.98);
         }
-        body { background-color: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; overflow: hidden; height: 100vh; }
+        * { touch-action: manipulation; }
+        body { 
+            background-color: var(--bg); color: #eee; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            overflow: hidden; height: 100vh; width: 100vw;
+        }
         
         #setup-screen { position: fixed; inset: 0; background: #111 url('__GITHUB_BASE__Maps/intro.jpg') center/cover; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: -1; }
+        #setup-screen::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: -1; }
         
-        .card { background: rgba(26, 26, 26, 0.95); border: 2px solid var(--primary); border-radius: 12px; padding: 25px; width: 450px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .card { background: rgba(26, 26, 26, 0.95); border: 2px solid var(--primary); border-radius: 12px; padding: 20px; width: 85%; max-width: 400px; text-align: center; }
         
-        .input-group { margin: 12px 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
-        label { font-size: 13px; color: var(--primary); font-weight: bold; }
-        input, select { background: #222; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; font-size: 14px; }
+        .input-group { margin: 10px 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+        label { font-size: 12px; color: var(--primary); font-weight: bold; }
+        input, select { background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 6px; font-size: 16px; width: 100%; box-sizing: border-box; }
         
-        button { background: var(--primary); color: black; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { transform: scale(1.05); background: #d4ac0d; }
-        button:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; }
+        button { background: var(--primary); color: black; border: none; padding: 14px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        
+        #ui-top { width: 100%; background: #111; padding: 5px; display: flex; justify-content: center; flex-wrap: wrap; border-bottom: 1px solid #333; z-index: 100; gap: 5px; }
+        .stat-badge { background: #222; padding: 4px 8px; border-radius: 15px; border: 1px solid #444; font-size: 11px; display: flex; align-items: center; gap: 4px; }
 
-        #ui-top { width: 100%; background: #111; padding: 10px; display: flex; justify-content: space-around; border-bottom: 2px solid #333; z-index: 100; flex-wrap: wrap; gap: 10px; }
-        .stat-badge { background: #222; padding: 5px 12px; border-radius: 20px; border: 1px solid #444; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-
-        #game-container { position: relative; width: 720px; height: 1080px; margin-top: 5px; border: 2px solid #333; overflow: hidden; background: #000; }
+        #game-container { 
+            position: relative; 
+            width: 95vw; 
+            height: calc(95vw * (1080 / 720)); 
+            max-height: 65vh;
+            margin-top: 5px; border: 2px solid #333; overflow: hidden; background: #000; 
+        }
         #map-bg-container { position: absolute; inset: 0; z-index: 1; }
         .map-asset { width: 100%; height: 100%; object-fit: cover; display: none; }
 
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
-        .cell { border: 1px solid rgba(255,255,255,0.02); box-sizing: border-box; }
-        
-        .cell.wall { background: transparent !important; border: none !important; } 
+        .cell { border: 1px solid rgba(255,255,255,0.01); }
+        .cell.wall { background: transparent !important; } 
 
-        .char { position: absolute; width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); z-index: 50; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; font-size: 18px; user-select: none; }
-        .hero { box-shadow: 0 0 15px var(--primary); }
+        .char { position: absolute; width: 4%; height: 2.7%; border-radius: 50%; border: 1px solid white; z-index: 50; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; font-size: 12px; }
+        .hero { box-shadow: 0 0 10px var(--primary); border-width: 2px; }
         .enemy { background: #5a0000; border-color: #ff4444; }
-        .active-char { outline: 3px solid white; z-index: 60; animation: pulse 1s infinite; }
         
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        /* D-PAD MOBILE */
+        #mobile-controls {
+            position: fixed; bottom: 20px; left: 20px;
+            display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px);
+            gap: 10px; z-index: 1000;
+        }
+        .joy-btn {
+            background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: white; width: 60px; height: 60px;
+        }
+        .joy-btn:active { background: var(--primary); color: black; }
 
-        #action-panel { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 2px solid var(--primary); padding: 12px; border-radius: 12px; display: none; flex-direction: column; gap: 8px; z-index: 500; min-width: 250px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #action-panel { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 2px solid var(--primary); padding: 10px; border-radius: 12px; display: none; flex-direction: column; gap: 8px; z-index: 1500; width: 80%; max-width: 300px; box-shadow: 0 5px 20px rgba(0,0,0,0.8); }
         
-        .log-container { position: fixed; bottom: 20px; right: 20px; width: 300px; height: 160px; background: var(--panel); border: 1px solid #444; padding: 12px; font-size: 12px; overflow-y: auto; border-radius: 8px; color: #ccc; }
-        .log-entry { border-left: 3px solid var(--primary); padding-left: 8px; margin-bottom: 4px; }
-        
-        .loot-icon { position: absolute; z-index: 10; font-size: 20px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .log-container { position: fixed; bottom: 10px; right: 10px; width: 140px; height: 100px; background: rgba(0,0,0,0.7); padding: 8px; font-size: 10px; overflow-y: auto; border-radius: 8px; color: #ccc; pointer-events: none; }
+        .loot-icon { position: absolute; z-index: 10; font-size: 18px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body onclick="playIntroOnce()">
@@ -82,35 +100,31 @@ html_template = """
 
     <div id="setup-screen">
         <div class="card">
-            <h1 style="color:var(--primary); margin-top:0;">Arena del Destino</h1>
+            <h1 style="color:var(--primary); margin:0; font-size: 24px;">Arena del Destino</h1>
+            <p style="font-size:12px; color:#aaa;">Edizione Mobile</p>
             <div class="input-group">
                 <label>Nome Eroe</label>
-                <input type="text" id="p-nome" placeholder="Inserisci nome...">
+                <input type="text" id="p-nome" placeholder="Nome...">
                 <label>Razza</label>
                 <select id="p-razza">
                     <option value="Umano">Umano</option><option value="Elfo">Elfo</option><option value="Nano">Nano</option>
-                    <option value="Halfling">Halfling</option><option value="Dragonide">Dragonide</option><option value="Gnomo">Gnomo</option>
-                    <option value="Mezzelfo">Mezzelfo</option><option value="Mezzorco">Mezzorco</option><option value="Tiefling">Tiefling</option>
+                    <option value="Mezzorco">Mezzorco</option><option value="Tiefling">Tiefling</option>
                 </select>
                 <label>Classe</label>
                 <select id="p-classe">
-                    <option value="Barbaro">Barbaro</option><option value="Guerriero">Guerriero</option><option value="Paladino">Paladino</option>
-                    <option value="Ranger">Ranger</option><option value="Chierico">Chierico</option><option value="Ladro">Ladro</option>
-                    <option value="Bardo">Bardo</option><option value="Druido">Druido</option><option value="Monaco">Monaco</option>
-                    <option value="Warlock">Warlock</option><option value="Mago">Mago</option><option value="Stregone">Stregone</option>
+                    <option value="Guerriero">Guerriero</option><option value="Mago">Mago</option><option value="Ladro">Ladro</option><option value="Barbaro">Barbaro</option>
                 </select>
             </div>
-            <button onclick="iniziaAvventura()">INIZIA SAGA MAPPAT</button>
+            <button onclick="iniziaAvventura()">GIOCA ORA ⚔️</button>
         </div>
     </div>
 
     <div id="ui-top">
-        <div class="stat-badge">Mappa: <span id="map-name-display">1</span></div>
-        <div class="stat-badge">❤️ HP: <span id="hp-display" style="color:var(--danger)">0</span></div>
-        <div class="stat-badge">💰 Oro: <span id="gold-display" style="color:gold">0</span></div>
-        <div class="stat-badge">🧪 Pozioni: <span id="potion-display" style="color:var(--success)">0</span></div>
-        <button id="btn-use-potion" onclick="usaPozione()" style="padding: 5px 10px; font-size: 11px; background: #2ecc71; color: white;">BEVI 🧪</button>
-        <div class="stat-badge">👣 Passi: <span id="moves-display">6</span>/6</div>
+        <div class="stat-badge">❤️ <span id="hp-display">0</span></div>
+        <div class="stat-badge">💰 <span id="gold-display">0</span></div>
+        <div class="stat-badge">🧪 <span id="potion-display">0</span></div>
+        <button id="btn-use-potion" onclick="usaPozione()" style="padding: 4px 8px; font-size: 10px;">BEVI</button>
+        <div class="stat-badge">👣 <span id="moves-display">6</span></div>
     </div>
 
     <div id="game-container">
@@ -120,10 +134,18 @@ html_template = """
         <div id="grid"></div>
     </div>
 
+    <!-- CONTROLLI MOBILE -->
+    <div id="mobile-controls">
+        <div></div><button class="joy-btn" onclick="muoviEroeBtn(0, -1)">▲</button><div></div>
+        <button class="joy-btn" onclick="muoviEroeBtn(-1, 0)">◀</button>
+        <button class="joy-btn" onclick="muoviEroeBtn(0, 1)">▼</button>
+        <button class="joy-btn" onclick="muoviEroeBtn(1, 0)">▶</button>
+    </div>
+
     <div id="action-panel">
-        <div style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:5px; text-align:center;">AZIONI COMBATTIMENTO</div>
+        <div style="font-size:11px; color:var(--primary); font-weight:bold; text-align:center;">AZIONI</div>
         <div id="weapon-buttons" style="display:flex; flex-direction:column; gap:5px;"></div>
-        <button onclick="prossimoTurno()" style="background:#442222; color:white; margin-top:5px; font-size:12px;">Passa Turno</button>
+        <button onclick="prossimoTurno()" style="background:#422; color:white; margin-top:5px; font-size:12px; padding:8px;">Passa</button>
     </div>
 
     <div class="log-container" id="game-log"></div>
@@ -131,26 +153,16 @@ html_template = """
     <script>
         const BASE_URL = "__GITHUB_BASE__";
         const COLS = 24, ROWS = 36;
-        const CELL_W = 720 / COLS, CELL_H = 1080 / ROWS;
         const audioPlayer = document.getElementById('bg-music');
 
         const RACE_ICONS = { "Umano": "🧔", "Elfo": "🧝", "Nano": "🎅", "Halfling": "👦", "Dragonide": "🐲", "Gnomo": "🧙‍♂️", "Mezzelfo": "🧝‍♂️", "Mezzorco": "👹", "Tiefling": "😈" };
         const HP_MAP = { "Barbaro": 12, "Guerriero": 10, "Paladino": 10, "Ranger": 10, "Chierico": 8, "Ladro": 8, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
-        const ENEMY_ICONS = ["👹", "🧟", "💀", "🐺", "🦎", "👻"];
-
+        
         const WEAPON_CONFIG = {
-            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }, { name: "Giavellotto", dice: 6, range: 6, icon: "🎯" }],
-            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }, { name: "Arco Lungo", dice: 8, range: 10, icon: "🏹" }],
-            "Paladino": [{ name: "Martello da Guerra", dice: 10, range: 1.5, icon: "🔨" }, { name: "Punizione Divina", dice: 8, range: 3, icon: "✨" }],
-            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }, { name: "Spada Corta", dice: 6, range: 1.5, icon: "🗡️" }],
-            "Chierico": [{ name: "Mazza", dice: 6, range: 1.5, icon: "🏏" }, { name: "Fiamma Sacra", dice: 8, range: 8, icon: "🔥" }],
-            "Ladro": [{ name: "Pugnale Furtivo", dice: 6, range: 1.5, icon: "🔪" }, { name: "Balestra Leggera", dice: 8, range: 8, icon: "🏹" }],
-            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }, { name: "Beffa Crudele", dice: 4, range: 8, icon: "🎶" }],
-            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }, { name: "Frusta di Spine", dice: 6, range: 6, icon: "🌿" }],
-            "Monaco": [{ name: "Colpo Senz'Armi", dice: 6, range: 1.5, icon: "👊" }, { name: "Dardi di Energia", dice: 4, range: 6, icon: "☄️" }],
-            "Warlock": [{ name: "Deflagrazione Occulta", dice: 10, range: 10, icon: "💜" }, { name: "Pugnale di Vetro", dice: 4, range: 1.5, icon: "🔪" }],
-            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }, { name: "Palla di Fuoco", dice: 10, range: 8, icon: "💥" }],
-            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }, { name: "Scossa Elettrica", dice: 8, range: 1.5, icon: "⚡" }]
+            "Barbaro": [{ name: "Ascia", dice: 12, range: 1.5, icon: "🪓" }],
+            "Guerriero": [{ name: "Spada", dice: 8, range: 1.5, icon: "⚔️" }],
+            "Mago": [{ name: "Dardo", dice: 4, range: 12, icon: "🪄" }],
+            "Ladro": [{ name: "Pugnale", dice: 6, range: 1.5, icon: "🔪" }]
         };
 
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null, loots = {};
@@ -158,7 +170,7 @@ html_template = """
         function playIntroOnce() {
             if (audioPlayer.paused) {
                 audioPlayer.src = BASE_URL + "Music/intro.mp3";
-                audioPlayer.play().catch(e => { console.error("Audio intro mancante"); });
+                audioPlayer.play().catch(e => {});
             }
         }
 
@@ -179,16 +191,15 @@ html_template = """
             const nome = document.getElementById('p-nome').value || "Eroe";
             const razza = document.getElementById('p-razza').value;
             const classe = document.getElementById('p-classe').value;
-            
-            let hp = HP_MAP[classe] + 15;
+            let hp = (HP_MAP[classe] || 10) + 15;
             if(razza === "Nano") hp += 5;
 
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', razza, classe, 
                 x: 12, y: 2, movesRemaining: 6, element: null, 
                 ini: 0, dead: false, icon: RACE_ICONS[razza],
-                weapons: WEAPON_CONFIG[classe] || [],
-                inventory: { potions: 0, coins: 0 }
+                weapons: WEAPON_CONFIG[classe] || WEAPON_CONFIG["Guerriero"],
+                inventory: { potions: 1, coins: 0 }
             }];
 
             caricaMappaCompleta(1);
@@ -196,7 +207,6 @@ html_template = """
 
         async function caricaMappaCompleta(mapNumber) {
             currentMapNumber = mapNumber;
-            document.getElementById('map-name-display').innerText = mapNumber;
             isCombat = false;
             document.getElementById('action-panel').style.display = 'none';
 
@@ -212,7 +222,6 @@ html_template = """
                     if (check.ok) { imgEl.src = testUrl; imgEl.style.display = 'block'; loaded = true; }
                 } catch(e) {}
             }
-            if (!loaded) addLog("Immagine Mappa " + mapNumber + " non trovata.");
 
             audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
             audioPlayer.play().catch(e => {});
@@ -227,19 +236,19 @@ html_template = """
             hero.x = 12; hero.y = 2; hero.movesRemaining = 6;
             
             entities = [hero];
-            let enemyCount = 1 + Math.floor(mapNumber / 1.5);
+            let enemyCount = 1 + Math.floor(mapNumber / 2);
             for(let i=0; i<enemyCount; i++) {
                 entities.push({
-                    nome: "Mostro " + (i+1), hp: 8 + (mapNumber*5), 
+                    nome: "Nemico", hp: 8 + (mapNumber*5), 
                     tipo: 'enemy', x: Math.floor(Math.random()*18)+3, 
                     y: Math.floor(Math.random()*15)+18, 
                     movesRemaining: 4, dead: false, element: null,
-                    icon: ENEMY_ICONS[Math.floor(Math.random()*ENEMY_ICONS.length)]
+                    icon: "👹"
                 });
             }
             disegnaEntita();
             aggiornaUI();
-            addLog("Ingresso Mappa " + mapNumber);
+            addLog("Mappa " + mapNumber);
         }
 
         function applyLevelData(data) {
@@ -249,20 +258,16 @@ html_template = """
 
             loots = {};
             document.querySelectorAll('.loot-icon').forEach(l => l.remove());
-            if (data.loot && Array.isArray(data.loot)) {
-                data.loot.forEach(item => {
-                    spawnLoot(parseInt(item.idx), item.type);
-                });
-            }
+            if (data.loot) data.loot.forEach(item => spawnLoot(parseInt(item.idx), item.type));
         }
 
         function spawnLoot(idx, type) {
             const el = document.createElement('div');
             el.className = 'loot-icon';
             el.innerText = type === 'moneta' ? "💰" : "🧪";
-            el.style.width = CELL_W + 'px'; el.style.height = CELL_H + 'px';
-            el.style.left = (idx % COLS) * CELL_W + 'px';
-            el.style.top = Math.floor(idx / COLS) * CELL_H + 'px';
+            el.style.width = (100/COLS) + '%'; el.style.height = (100/ROWS) + '%';
+            el.style.left = ((idx % COLS) * (100/COLS)) + '%';
+            el.style.top = (Math.floor(idx / COLS) * (100/ROWS)) + '%';
             document.getElementById('game-container').appendChild(el);
             loots[idx] = { type, element: el };
         }
@@ -282,37 +287,50 @@ html_template = """
 
         function aggiornaPosizione(ent) {
             if(!ent.element) return;
-            ent.element.style.transform = `translate(${ent.x * CELL_W}px, ${ent.y * CELL_H}px)`;
+            ent.element.style.left = (ent.x * (100/COLS)) + '%';
+            ent.element.style.top = (ent.y * (100/ROWS)) + '%';
             
             if (ent.tipo === 'hero') {
                 const idx = Math.floor(ent.y) * COLS + Math.floor(ent.x);
                 if (loots[idx]) {
-                    const item = loots[idx];
-                    if (item.type === 'pozione') {
-                        ent.inventory.potions++;
-                        addLog("Hai trovato una pozione! Salvata nello zaino.");
-                    } else {
-                        ent.inventory.coins += 15;
-                        addLog("Hai raccolto 15 monete d'oro!");
-                    }
-                    item.element.remove();
+                    if (loots[idx].type === 'pozione') ent.inventory.potions++;
+                    else ent.inventory.coins += 15;
+                    loots[idx].element.remove();
                     delete loots[idx];
                     aggiornaUI();
                 }
             }
         }
 
+        function muoviEroeBtn(dx, dy) {
+            const hero = entities.find(e => e.tipo === 'hero');
+            if (!hero || hero.dead || (isCombat && activeEntity !== hero)) return;
+            
+            let nx = hero.x + dx, ny = hero.y + dy;
+            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                const cell = document.querySelectorAll('.cell')[ny * COLS + nx];
+                if (cell && !cell.classList.contains('wall')) {
+                    hero.x = nx; hero.y = ny;
+                    if(isCombat) hero.movesRemaining--;
+                    aggiornaPosizione(hero);
+                    if(!isCombat) {
+                        entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
+                            if(Math.sqrt(Math.pow(en.x-hero.x, 2) + Math.pow(en.y-hero.y, 2)) < 5) iniziaCombattimento();
+                        });
+                    }
+                    if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
+                }
+            }
+            aggiornaUI();
+        }
+
         function usaPozione() {
             const hero = entities.find(e => e.tipo === 'hero');
-            if (hero.inventory.potions > 0 && hero.hp < hero.maxHP) {
+            if (hero.inventory.potions > 0) {
                 hero.inventory.potions--;
-                hero.hp = Math.min(hero.maxHP, hero.hp + 12);
-                addLog("Bevi la pozione... ti senti rinvigorito! (+12 HP)");
+                hero.hp = Math.min(hero.maxHP, hero.hp + 15);
+                addLog("Cura +15 HP");
                 aggiornaUI();
-            } else if (hero.hp >= hero.maxHP) {
-                addLog("La tua vita è già al massimo!");
-            } else {
-                addLog("Non hai pozioni nello zaino!");
             }
         }
 
@@ -324,13 +342,12 @@ html_template = """
             document.getElementById('gold-display').innerText = hero.inventory.coins;
             document.getElementById('potion-display').innerText = hero.inventory.potions;
             document.getElementById('btn-use-potion').disabled = hero.inventory.potions <= 0;
-            document.getElementById('turn-display').innerText = isCombat ? "Lotta" : "Esplorazione";
         }
 
         function iniziaCombattimento() {
             if(isCombat) return;
             isCombat = true;
-            addLog("COMBATTIMENTO!");
+            addLog("LOTTA!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0;
@@ -342,9 +359,7 @@ html_template = """
             entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
             activeEntity = entities[currentIndex % entities.length];
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
-            
             activeEntity.element.classList.add('active-char');
-            activeEntity.movesRemaining = (activeEntity.tipo === 'hero') ? 6 : 4;
             
             const panel = document.getElementById('action-panel');
             if(activeEntity.tipo === 'enemy') {
@@ -373,38 +388,26 @@ html_template = """
             const hero = entities.find(e => e.tipo === 'hero');
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
-
             let dist = Math.sqrt(Math.pow(hero.x - target.x, 2) + Math.pow(hero.y - target.y, 2));
             if(dist <= weapon.range) {
-                let dmg = Math.floor(Math.random() * weapon.dice) + 4;
+                let dmg = Math.floor(Math.random() * weapon.dice) + 5;
                 target.hp -= dmg;
-                addLog(`Usi ${weapon.name}: ${dmg} danni!`);
+                addLog(`Danni: ${dmg}`);
                 if(target.hp <= 0) {
-                    target.dead = true;
-                    target.element.style.opacity = "0.1";
-                    addLog(target.nome + " è morto e ha lasciato cadere dell'oro!");
-                    // DROP LOOT DAL NEMICO MORTO
-                    const idx = Math.floor(target.y) * COLS + Math.floor(target.x);
-                    spawnLoot(idx, 'moneta');
+                    target.dead = true; target.element.style.opacity = "0.2";
+                    spawnLoot(Math.floor(target.y)*COLS+Math.floor(target.x), 'moneta');
                     controllaFineCombattimento();
                 }
                 document.getElementById('action-panel').style.display = 'none';
-                if(isCombat) prossimoTurno();
-            } else {
-                addLog(`Bersaglio troppo lontano!`);
-            }
+                prossimoTurno();
+            } else addLog("Lontano!");
         }
 
         function controllaFineCombattimento() {
-            const nemiciVivi = entities.filter(e => e.tipo === 'enemy' && !e.dead).length;
-            if (nemiciVivi === 0) {
+            if (entities.filter(e => e.tipo === 'enemy' && !e.dead).length === 0) {
                 isCombat = false;
-                activeEntity = null;
                 document.getElementById('action-panel').style.display = 'none';
-                entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
-                addLog("Vittoria! Area ripulita.");
-                const hero = entities.find(e => e.tipo === 'hero');
-                hero.movesRemaining = 6;
+                addLog("Vittoria!");
                 aggiornaUI();
             }
         }
@@ -415,60 +418,21 @@ html_template = """
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
-            let d = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
-            if(d < 1.6) {
+            if(Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2)) < 1.6) {
                 let dmg = Math.floor(Math.random()*6)+2;
-                hero.hp -= dmg;
-                addLog("Il mostro ti morde! -" + dmg + " HP");
-                if(hero.hp <= 0) { alert("Saga Fallita."); location.reload(); }
+                hero.hp -= dmg; addLog(`Subisci ${dmg}`);
+                if(hero.hp <= 0) { alert("Sconfitta!"); location.reload(); }
             }
             setTimeout(prossimoTurno, 500);
         }
 
-        function prossimoTurno() {
-            if (!isCombat) return;
-            currentIndex++;
-            selezionaTurno();
-        }
-
-        window.addEventListener('keydown', (e) => {
-            const hero = entities.find(e => e.tipo === 'hero');
-            if (!hero || hero.dead) return;
-            if (isCombat && activeEntity !== hero) return;
-            
-            if (e.key.toLowerCase() === 'p') { usaPozione(); return; }
-
-            let nx = hero.x, ny = hero.y;
-            if (['w', 'ArrowUp'].includes(e.key)) ny--;
-            if (['s', 'ArrowDown'].includes(e.key)) ny++;
-            if (['a', 'ArrowLeft'].includes(e.key)) nx--;
-            if (['d', 'ArrowRight'].includes(e.key)) nx++;
-
-            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                const cell = document.querySelectorAll('.cell')[ny * COLS + nx];
-                if (cell && !cell.classList.contains('wall')) {
-                    hero.x = nx; hero.y = ny;
-                    if(isCombat) hero.movesRemaining--;
-                    aggiornaPosizione(hero);
-                    if(!isCombat) {
-                        entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
-                            if(Math.sqrt(Math.pow(en.x-hero.x, 2) + Math.pow(en.y-hero.y, 2)) < 6) iniziaCombattimento();
-                        });
-                    }
-                    if (hero.y >= ROWS - 1) {
-                        addLog("Passaggio all'area successiva...");
-                        caricaMappaCompleta(currentMapNumber + 1);
-                    }
-                }
-            }
-            aggiornaUI();
-        });
+        function prossimoTurno() { if(isCombat) { currentIndex++; selezionaTurno(); } }
     </script>
 </body>
 </html>
 """
 
-# Sostituzione base URL e renderizzazione finale
+# Rendering
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
-components.html(f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1180px" allow="autoplay"></iframe>', height=1180)
+components.html(f'<iframe src="data:text/html;base64,{b64_html}" allow="autoplay"></iframe>', height=800)
