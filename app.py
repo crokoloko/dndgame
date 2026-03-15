@@ -21,7 +21,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Template HTML/JS/CSS (senza f-string per evitare errori di sintassi Python con le graffe)
+# Template HTML/JS/CSS
 html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -59,7 +59,6 @@ html_template = """
         #grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(24, 1fr); grid-template-rows: repeat(36, 1fr); z-index: 5; pointer-events: none; }
         .cell { border: 1px solid rgba(255,255,255,0.02); box-sizing: border-box; }
         
-        /* MURI TRASPARENTI */
         .cell.wall { background: transparent !important; border: none !important; } 
 
         .char { position: absolute; width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); z-index: 50; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; font-size: 18px; user-select: none; }
@@ -133,6 +132,21 @@ html_template = """
         const HP_MAP = { "Barbaro": 12, "Guerriero": 10, "Paladino": 10, "Ranger": 10, "Chierico": 8, "Ladro": 8, "Bardo": 8, "Druido": 8, "Monaco": 8, "Warlock": 8, "Mago": 6, "Stregone": 6 };
         const ENEMY_ICONS = ["👹", "🧟", "💀", "🐺", "🦎", "👻"];
 
+        const WEAPON_CONFIG = {
+            "Barbaro": [{ name: "Ascia Bipenne", dice: 12, range: 1.5, icon: "🪓" }, { name: "Giavellotto", dice: 6, range: 6, icon: "🎯" }],
+            "Guerriero": [{ name: "Spada Lunga", dice: 8, range: 1.5, icon: "⚔️" }, { name: "Arco Lungo", dice: 8, range: 10, icon: "🏹" }],
+            "Paladino": [{ name: "Martello da Guerra", dice: 10, range: 1.5, icon: "🔨" }, { name: "Punizione Divina", dice: 8, range: 3, icon: "✨" }],
+            "Ranger": [{ name: "Arco Lungo", dice: 8, range: 12, icon: "🏹" }, { name: "Spada Corta", dice: 6, range: 1.5, icon: "🗡️" }],
+            "Chierico": [{ name: "Mazza", dice: 6, range: 1.5, icon: "🏏" }, { name: "Fiamma Sacra", dice: 8, range: 8, icon: "🔥" }],
+            "Ladro": [{ name: "Pugnale Furtivo", dice: 6, range: 1.5, icon: "🔪" }, { name: "Balestra Leggera", dice: 8, range: 8, icon: "🏹" }],
+            "Bardo": [{ name: "Stocco", dice: 8, range: 1.5, icon: "🤺" }, { name: "Beffa Crudele", dice: 4, range: 8, icon: "🎶" }],
+            "Druido": [{ name: "Bastone", dice: 6, range: 1.5, icon: "🦯" }, { name: "Frusta di Spine", dice: 6, range: 6, icon: "🌿" }],
+            "Monaco": [{ name: "Colpo Senz'Armi", dice: 6, range: 1.5, icon: "👊" }, { name: "Dardi di Energia", dice: 4, range: 6, icon: "☄️" }],
+            "Warlock": [{ name: "Deflagrazione Occulta", dice: 10, range: 10, icon: "💜" }, { name: "Pugnale di Vetro", dice: 4, range: 1.5, icon: "🔪" }],
+            "Mago": [{ name: "Dardo Incantato", dice: 4, range: 12, icon: "🪄" }, { name: "Palla di Fuoco", dice: 10, range: 8, icon: "💥" }],
+            "Stregone": [{ name: "Dardo di Fuoco", dice: 10, range: 10, icon: "☄️" }, { name: "Scossa Elettrica", dice: 8, range: 1.5, icon: "⚡" }]
+        };
+
         let currentMapNumber = 1, entities = [], currentIndex = 0, isCombat = false, activeEntity = null;
 
         function playIntroOnce() {
@@ -166,7 +180,8 @@ html_template = """
             entities = [{ 
                 nome, hp, maxHP: hp, tipo: 'hero', razza, classe, 
                 x: 12, y: 2, movesRemaining: 6, element: null, 
-                ini: 0, dead: false, icon: RACE_ICONS[razza] 
+                ini: 0, dead: false, icon: RACE_ICONS[razza],
+                weapons: WEAPON_CONFIG[classe] || []
             }];
 
             caricaMappaCompleta(1);
@@ -178,49 +193,31 @@ html_template = """
             isCombat = false;
             document.getElementById('action-panel').style.display = 'none';
 
-            // Caricamento Immagine Mappa con Fallback
             const imgEl = document.getElementById('map-img');
             imgEl.style.display = 'none';
-            
             const extensions = ['jpg', 'png', 'jpeg'];
             let loaded = false;
-
             for (let ext of extensions) {
                 if (loaded) break;
                 const testUrl = `${BASE_URL}Maps/${mapNumber}.${ext}`;
                 try {
                     const check = await fetch(testUrl, { method: 'HEAD' });
-                    if (check.ok) {
-                        imgEl.src = testUrl;
-                        imgEl.style.display = 'block';
-                        loaded = true;
-                    }
+                    if (check.ok) { imgEl.src = testUrl; imgEl.style.display = 'block'; loaded = true; }
                 } catch(e) {}
             }
-            
-            if (!loaded) {
-                addLog("Attenzione: File immagine per Mappa " + mapNumber + " non trovato su GitHub.");
-            }
+            if (!loaded) addLog("Immagine Mappa " + mapNumber + " non trovata.");
 
-            // Audio
             audioPlayer.src = BASE_URL + "Music/" + mapNumber + ".mp3";
-            audioPlayer.play().catch(e => { console.log("Musica non trovata per mappa " + mapNumber); });
+            audioPlayer.play().catch(e => {});
 
-            // Carica JSON Muri
             try {
                 const response = await fetch(`${BASE_URL}Maps/${mapNumber}.json`);
-                if (response.ok) {
-                    const data = await response.json();
-                    applyLevelData(data);
-                } else {
-                    applyLevelData({}); // Pulisce muri se JSON manca
-                }
+                if (response.ok) applyLevelData(await response.json());
+                else applyLevelData({});
             } catch (e) { applyLevelData({}); }
 
-            // Reset Eroe e Spawn Nemici
             const hero = entities[0];
             hero.x = 12; hero.y = 2; hero.movesRemaining = 6;
-            
             entities = [hero];
             let enemyCount = 1 + Math.floor(mapNumber / 1.5);
             for(let i=0; i<enemyCount; i++) {
@@ -232,7 +229,6 @@ html_template = """
                     icon: ENEMY_ICONS[Math.floor(Math.random()*ENEMY_ICONS.length)]
                 });
             }
-
             disegnaEntita();
             aggiornaUI();
             addLog("Ingresso Mappa " + mapNumber);
@@ -241,9 +237,7 @@ html_template = """
         function applyLevelData(data) {
             const cells = document.querySelectorAll('.cell');
             cells.forEach(c => c.classList.remove('wall'));
-            if (data.walls) {
-                data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
-            }
+            if (data.walls) data.walls.forEach(idx => { if (cells[idx]) cells[idx].classList.add('wall'); });
         }
 
         function disegnaEntita() {
@@ -274,7 +268,7 @@ html_template = """
         function iniziaCombattimento() {
             if(isCombat) return;
             isCombat = true;
-            addLog("BATTAGLIA INIZIATA!");
+            addLog("COMBATTIMENTO!");
             entities.forEach(ent => ent.ini = Math.floor(Math.random()*20)+1);
             entities.sort((a,b) => b.ini - a.ini);
             currentIndex = 0;
@@ -285,12 +279,9 @@ html_template = """
             if (!isCombat) return;
             entities.forEach(e => { if(e.element) e.element.classList.remove('active-char'); });
             activeEntity = entities[currentIndex % entities.length];
-            
             if(!activeEntity || activeEntity.dead) return prossimoTurno();
-            
             activeEntity.element.classList.add('active-char');
             activeEntity.movesRemaining = (activeEntity.tipo === 'hero') ? 6 : 4;
-            
             const panel = document.getElementById('action-panel');
             if(activeEntity.tipo === 'enemy') {
                 panel.style.display = 'none';
@@ -303,30 +294,37 @@ html_template = """
         }
 
         function renderAzioni() {
+            const hero = entities.find(e => e.tipo === 'hero');
             const btnContainer = document.getElementById('weapon-buttons');
-            btnContainer.innerHTML = '<button onclick="attaccoBase()">⚔️ Attacco Rapido</button>';
+            btnContainer.innerHTML = '';
+            hero.weapons.forEach(weapon => {
+                const btn = document.createElement('button');
+                btn.innerHTML = `${weapon.icon} ${weapon.name}`;
+                btn.onclick = () => attaccaConArma(weapon);
+                btnContainer.appendChild(btn);
+            });
         }
 
-        function attaccoBase() {
+        function attaccaConArma(weapon) {
             const hero = entities.find(e => e.tipo === 'hero');
             const target = entities.find(e => e.tipo === 'enemy' && !e.dead);
             if(!target) return;
 
             let dist = Math.sqrt(Math.pow(hero.x - target.x, 2) + Math.pow(hero.y - target.y, 2));
-            if(dist < 3.5) {
-                let dmg = Math.floor(Math.random()*10)+5;
+            if(dist <= weapon.range) {
+                let dmg = Math.floor(Math.random() * weapon.dice) + 1 + 2; // Danno dado + bonus fisso
                 target.hp -= dmg;
-                addLog("Colpisci " + target.nome + " per " + dmg + " danni!");
+                addLog(`Usi ${weapon.name}: ${dmg} danni a ${target.nome}!`);
                 if(target.hp <= 0) {
                     target.dead = true;
                     target.element.style.opacity = "0.2";
-                    addLog(target.nome + " è caduto!");
+                    addLog(target.nome + " sconfitto!");
                     controllaFineCombattimento();
                 }
                 document.getElementById('action-panel').style.display = 'none';
                 prossimoTurno();
             } else {
-                addLog("Troppo lontano dal nemico!");
+                addLog(`${weapon.name} fuori portata!`);
             }
         }
 
@@ -335,7 +333,7 @@ html_template = """
             if (nemiciVivi === 0) {
                 isCombat = false;
                 document.getElementById('action-panel').style.display = 'none';
-                addLog("Vittoria! Area sicura.");
+                addLog("Vittoria!");
                 aggiornaUI();
             }
         }
@@ -343,18 +341,15 @@ html_template = """
         function turnoIA() {
             if(!isCombat || !activeEntity || activeEntity.dead) return prossimoTurno();
             const hero = entities.find(e => e.tipo === 'hero');
-            
-            // Movimento verso eroe
             if(activeEntity.x < hero.x) activeEntity.x++; else if(activeEntity.x > hero.x) activeEntity.x--;
             if(activeEntity.y < hero.y) activeEntity.y++; else if(activeEntity.y > hero.y) activeEntity.y--;
             aggiornaPosizione(activeEntity);
-            
             let d = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
             if(d < 1.6) {
                 let dmg = Math.floor(Math.random()*6)+2;
                 hero.hp -= dmg;
-                addLog("Il mostro ti morde! -" + dmg + " HP");
-                if(hero.hp <= 0) { alert("Saga Fallita: l'eroe è morto."); location.reload(); }
+                addLog("Il mostro colpisce! -" + dmg + " HP");
+                if(hero.hp <= 0) { alert("Saga Fallita."); location.reload(); }
             }
             setTimeout(prossimoTurno, 500);
         }
@@ -368,32 +363,23 @@ html_template = """
         window.addEventListener('keydown', (e) => {
             const hero = entities[0];
             if (!hero || hero.dead || (isCombat && activeEntity !== hero)) return;
-            
             let nx = hero.x, ny = hero.y;
             if (['w', 'ArrowUp'].includes(e.key)) ny--;
             if (['s', 'ArrowDown'].includes(e.key)) ny++;
             if (['a', 'ArrowLeft'].includes(e.key)) nx--;
             if (['d', 'ArrowRight'].includes(e.key)) nx++;
-
             if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
                 const cell = document.querySelectorAll('.cell')[ny * COLS + nx];
                 if (cell && !cell.classList.contains('wall')) {
                     hero.x = nx; hero.y = ny;
                     if(isCombat) hero.movesRemaining--;
                     aggiornaPosizione(hero);
-                    
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
                             if(Math.sqrt(Math.pow(en.x-hero.x, 2) + Math.pow(en.y-hero.y, 2)) < 6) iniziaCombattimento();
                         });
                     }
-                    
-                    if (hero.y >= ROWS - 1) {
-                        addLog("Passaggio all'area successiva...");
-                        caricaMappaCompleta(currentMapNumber + 1);
-                    }
-                } else {
-                    addLog("Percorso bloccato.");
+                    if (hero.y >= ROWS - 1) caricaMappaCompleta(currentMapNumber + 1);
                 }
             }
             aggiornaUI();
@@ -403,7 +389,7 @@ html_template = """
 </html>
 """
 
-# Sostituzione base URL e renderizzazione Base64
+# Rendering
 game_html = html_template.replace("__GITHUB_BASE__", GITHUB_BASE)
 b64_html = base64.b64encode(game_html.encode('utf-8')).decode('utf-8')
 components.html(f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="1180px" allow="autoplay"></iframe>', height=1180)
