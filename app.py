@@ -90,7 +90,7 @@ html_template = """
 
         #ui-top { 
             height: 60px; width: 100%; background: #111; 
-            display: flex; justify-content: center; align-items: center;
+            display: flex; justify(content: center; align-items: center;
             border-bottom: 2px solid #333; z-index: 1000; gap: 20px; flex-shrink: 0;
         }
         .stat-badge { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: #222; border-radius: 10px; border: 1px solid #444; }
@@ -255,7 +255,7 @@ html_template = """
             log.prepend(entry);
         }
 
-        // Funzione per controllare la linea di vista (Bresenham)
+        // Funzione per controllare la linea di vista (Bresenham) corretta
         function hasLineOfSight(p1, p2) {
             let x0 = Math.floor(p1.x), y0 = Math.floor(p1.y);
             let x1 = Math.floor(p2.x), y1 = Math.floor(p2.y);
@@ -265,14 +265,18 @@ html_template = """
             const cells = document.querySelectorAll('.cell');
 
             while (true) {
+                // Controllo se siamo arrivati al bersaglio
                 if (x0 === x1 && y0 === y1) break;
+
+                // Non controlliamo la cella di partenza per evitare auto-collisione
+                if (x0 !== Math.floor(p1.x) || y0 !== Math.floor(p1.y)) {
+                    let idx = y0 * COLS + x0;
+                    if (cells[idx] && cells[idx].classList.contains('wall')) return false;
+                }
+
                 let e2 = 2 * err;
                 if (e2 > -dy) { err -= dy; x0 += sx; }
                 if (e2 < dx) { err += dx; y0 += sy; }
-                if (x0 === x1 && y0 === y1) break;
-                
-                let idx = y0 * COLS + x0;
-                if (cells[idx] && cells[idx].classList.contains('wall')) return false;
             }
             return true;
         }
@@ -392,7 +396,15 @@ html_template = """
                 const cells = document.querySelectorAll('.cell');
                 if (cells[idx] && !cells[idx].classList.contains('wall')) {
                     hero.x = nx; hero.y = ny;
-                    if(isCombat) hero.movesRemaining--;
+                    if(isCombat) {
+                        hero.movesRemaining--;
+                        // Se finisce i passi, passa il turno automaticamente dopo un istante
+                        if (hero.movesRemaining <= 0) {
+                            setTimeout(() => {
+                                if (isCombat && activeEntity === hero) prossimoTurno();
+                            }, 400);
+                        }
+                    }
                     aggiornaPosizione(hero);
                     if(!isCombat) {
                         entities.filter(en => en.tipo === 'enemy' && !en.dead).forEach(en => {
@@ -484,7 +496,7 @@ html_template = """
             if (hasLineOfSight(activeEntity, hero)) {
                 while (activeEntity.movesRemaining > 0) {
                     let dist = Math.sqrt(Math.pow(activeEntity.x - hero.x, 2) + Math.pow(activeEntity.y - hero.y, 2));
-                    if (dist < 1.6) break; // Già a contatto
+                    if (dist < 1.1) break; // Già a contatto
 
                     let dx = hero.x > activeEntity.x ? 1 : (hero.x < activeEntity.x ? -1 : 0);
                     let dy = hero.y > activeEntity.y ? 1 : (hero.y < activeEntity.y ? -1 : 0);
